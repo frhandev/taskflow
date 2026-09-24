@@ -2,7 +2,7 @@ import Link from "next/link";
 
 function Sidebar() {
   return (
-    <div className="w-64 min-h-screen bg-gray-800 text-white p-4 flex flex-col fixed">
+    <div className="w-64 min-h-screen shrink-0 bg-gray-800 text-white p-4 flex flex-col">
       <Link href="/" className="text-4xl font-bold">
         TaskFlow
       </Link>

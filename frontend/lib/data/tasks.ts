@@ -1,0 +1,58 @@
+import Task from "@/types/tasks";
+
+export const mockTasks: Task[] = [
+  {
+    id: '1',
+    title: 'Setup project structure',
+    description: 'Create the initial project folders and configure the development environment.',
+    status: 'completed',
+    priority: 'high',
+    dueDate: new Date('2026-09-20'),
+    createdAt: new Date('2026-09-15'),
+  },
+  {
+    id: '2',
+    title: 'Create task dashboard',
+    description: 'Build the main dashboard for displaying and managing tasks.',
+    status: 'completed',
+    priority: 'high',
+    dueDate: new Date('2026-09-22'),
+    createdAt: new Date('2026-09-16'),
+  },
+  {
+    id: '3',
+    title: 'Implement task creation',
+    description: 'Create a form that allows users to add new tasks.',
+    status: 'pending',
+    priority: 'high',
+    dueDate: new Date('2026-09-26'),
+    createdAt: new Date('2026-09-18'),
+  },
+  {
+    id: '4',
+    title: 'Add task filtering',
+    description: 'Allow users to filter tasks by status and priority.',
+    status: 'pending',
+    priority: 'medium',
+    dueDate: new Date('2026-09-28'),
+    createdAt: new Date('2026-09-19'),
+  },
+  {
+    id: '5',
+    title: 'Improve responsive design',
+    description: 'Optimize the task dashboard for mobile and tablet devices.',
+    status: 'pending',
+    priority: 'medium',
+    dueDate: new Date('2026-10-01'),
+    createdAt: new Date('2026-09-20'),
+  },
+  {
+    id: '6',
+    title: 'Write project documentation',
+    description: 'Add setup instructions and project information to the README.',
+    status: 'pending',
+    priority: 'low',
+    dueDate: new Date('2026-10-05'),
+    createdAt: new Date('2026-09-21'),
+  },
+];
