@@ -1,25 +1,22 @@
 "use client";
 
-import Priority from "@/types/priority";
-import Task from "@/types/task";
-import TaskFormData from "@/types/taskFormData";
+import FormErrors from "@/types/Tasks/FormErrors";
+import Priority from "@/types/Tasks/priority";
+import Task from "@/types/Tasks/task";
+import TaskFormData from "@/types/Tasks/taskFormData";
 import { SubmitEvent, useState } from "react";
-
-type FormErrors = {
-  title?: string;
-  priority?: string;
-  dueDate?: string;
-};
 
 function TaskForm() {
   const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     description: "",
-    priority: "low",
+    priority: "medium",
     dueDate: "",
   });
 
   const [error, setError] = useState<FormErrors>({});
+
+  const [successMessage, setSuccessMessage] = useState<string>("");
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,18 +36,22 @@ function TaskForm() {
     }
 
     // Validate due date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of the day for comparison
+    
     if (!formData.dueDate) {
       newError.dueDate = "Due date is required";
-    } else if (new Date(formData.dueDate) < new Date(Date.now())) {
+    } else if (new Date(formData.dueDate) < today) {
       newError.dueDate = "Due date cannot be in the past";
     }
-
-    setError(newError);
 
     if (Object.keys(newError).length > 0) {
       setError(newError);
       return;
     }
+
+    setError({}); // Clear errors if form is valid
+    setSuccessMessage("Task created successfully!");
 
     // Form is valid
     const newTask: Task = {
@@ -75,6 +76,7 @@ function TaskForm() {
         Task Title
       </label>
       <input
+        id="title"
         type="text"
         placeholder="Task Title"
         className="border p-2 rounded"
@@ -87,6 +89,7 @@ function TaskForm() {
         Task Description
       </label>
       <textarea
+        id="description"
         placeholder="Task Description"
         className="border p-2 rounded"
         value={formData.description}
@@ -99,6 +102,7 @@ function TaskForm() {
         Task Priority
       </label>
       <select
+      id="priority"
         className="border p-2 rounded"
         value={formData.priority}
         onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
@@ -115,6 +119,7 @@ function TaskForm() {
         Due Date
       </label>
       <input
+        id="dueDate"
         type="date"
         className="border p-2 rounded"
         value={formData.dueDate}
@@ -128,6 +133,9 @@ function TaskForm() {
       >
         Create Task
       </button>
+        {successMessage && (
+          <p className="text-green-500 text-sm">{successMessage}</p>
+        )}
     </form>
   );
 }
