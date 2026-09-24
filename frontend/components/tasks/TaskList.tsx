@@ -9,7 +9,22 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
 
-  const filteredTasks = tasks.filter((task) => {
+  const [taskItems, setTaskItems] = useState<Task[]>(tasks);
+
+  const handleStatusChange = (taskId: string, newStatus: string) => {
+    setTaskItems((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: newStatus as Task["status"],
+            }
+          : task,
+      ),
+    );
+  };
+
+  const filteredTasks = taskItems.filter((task) => {
     const matchesSearchTerm =
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -21,41 +36,85 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     return matchesSearchTerm && matchesStatusFilter && matchesPriorityFilter;
   });
 
+  const [sortBy, setSortBy] = useState<string>("last created");
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortBy === "last created") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    } else if (sortBy === "first created") {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    } else if (sortBy === "last due") {
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    } else if (sortBy === "first due") {
+      return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+    }
+    return 0;
+  });
+
   return (
     <>
-      <div>
+      <div className="flex gap-10">
         <input
           type="text"
           placeholder="Search tasks..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="in-progress">In Progress</option>
-          <option value="completed">Completed</option>
-        </select>
-        <select
-          value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value)}
-        >
-          <option value="all">All Priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+        <div>
+          <label htmlFor="statusFilter">Status:</label>
+          <select
+            id="statusFilter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="priotityFilter">Priority:</label>
+          <select
+            id="priotityFilter"
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+          >
+            <option value="all">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="sortBy">Sort By:</label>
+          <select
+            id="sortBy"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="last created">Last Created</option>
+            <option value="first created">First Created</option>
+            <option value="last due">Last Due</option>
+            <option value="first due">First Due</option>
+          </select>
+        </div>
       </div>
+
       <div className="mt-6 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredTasks.length === 0 && tasks.length > 0 ? (
           <div className="col-span-full text-center">
             <p className="text-gray-500">No tasks match the current filters.</p>
           </div>
         ) : (
-          filteredTasks.map((task) => <TaskCard key={task.id} task={task} />)
+          sortedTasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onComplete={handleStatusChange}
+            />
+          ))
         )}
         {tasks.length === 0 && (
           <div className="col-span-full text-center">
