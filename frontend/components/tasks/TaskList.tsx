@@ -36,16 +36,16 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     return matchesSearchTerm && matchesStatusFilter && matchesPriorityFilter;
   });
 
-  const [sortBy, setSortBy] = useState<string>("last created");
+  const [sortBy, setSortBy] = useState<string>("newest");
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (sortBy === "last created") {
+    if (sortBy === "oldest") {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else if (sortBy === "first created") {
+    } else if (sortBy === "newest") {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    } else if (sortBy === "last due") {
+    } else if (sortBy === "due-latest") {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    } else if (sortBy === "first due") {
+    } else if (sortBy === "due-earliest") {
       return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
     }
     return 0;
@@ -94,16 +94,16 @@ function TaskList({ tasks }: { tasks: Task[] }) {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="last created">Last Created</option>
-            <option value="first created">First Created</option>
-            <option value="last due">Last Due</option>
-            <option value="first due">First Due</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="due-latest">Due Date: Latest</option>
+            <option value="due-earliest">Due Date: Earliest</option>
           </select>
         </div>
       </div>
 
       <div className="mt-6 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {filteredTasks.length === 0 && tasks.length > 0 ? (
+        {filteredTasks.length === 0 && taskItems.length > 0 ? (
           <div className="col-span-full text-center">
             <p className="text-gray-500">No tasks match the current filters.</p>
           </div>
@@ -119,7 +119,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         {tasks.length === 0 && (
           <div className="col-span-full text-center">
             <p className="text-gray-500">No tasks yet.</p>
-            <p className="text-gray-500">Click on + New Task to create one.</p>
+            <p className="text-gray-500">Click on <span className="font-bold">+ New Task</span> to create one.</p>
           </div>
         )}
       </div>

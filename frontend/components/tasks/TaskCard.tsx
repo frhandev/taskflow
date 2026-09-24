@@ -1,7 +1,6 @@
-'use client';
+"use client";
 
 import Task from "@/types/Tasks/task";
-import { useState } from "react";
 
 type TaskCardProps = {
   task: Task;
@@ -20,15 +19,9 @@ export default function TaskCard({ task, onComplete }: TaskCardProps) {
     pending: "bg-yellow-100 text-yellow-700",
   };
 
-  const [status, setStatus] = useState<string>(task.status);
-
   const handleStatusChange = () => {
-    const newStatus = status === "completed" ? "pending" : "completed";
-    setStatus(newStatus);
-    onComplete(task.id, newStatus);
+    onComplete(task.id, "completed");
   };
-
-
 
   return (
     <div className="rounded-lg border p-4 shadow-sm">
@@ -63,9 +56,14 @@ export default function TaskCard({ task, onComplete }: TaskCardProps) {
         Created: {task.createdAt.toLocaleDateString()}
       </p>
 
-      <button className="mt-4 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600" onClick={handleStatusChange}>
-        Mark as {task.status === "completed" ? "Pending" : "Completed"}
-      </button>
+      {task.status === "pending" && (
+        <button
+          className="mt-4 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          onClick={handleStatusChange}
+        >
+          Mark as completed
+        </button>
+      )}
     </div>
   );
 }
