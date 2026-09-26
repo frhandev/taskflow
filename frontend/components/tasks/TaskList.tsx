@@ -3,6 +3,7 @@
 import Task from "@/types/Tasks/task";
 import TaskCard from "./TaskCard";
 import { useState } from "react";
+import EditTaskForm from "./EditTaskForm";
 
 function TaskList({ tasks }: { tasks: Task[] }) {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -11,19 +12,21 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 
   const [taskItems, setTaskItems] = useState<Task[]>(tasks);
 
-  const handleStatusChange = (taskId: string, newStatus: string) => {
+  //Status Changing
+  const handleStatusChange = (taskId: string) => {
     setTaskItems((currentTasks) =>
       currentTasks.map((task) =>
         task.id === taskId
           ? {
               ...task,
-              status: newStatus as Task["status"],
+              status: "completed",
             }
           : task,
       ),
     );
   };
 
+  //Task Filtering
   const filteredTasks = taskItems.filter((task) => {
     const matchesSearchTerm =
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,20 +39,38 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     return matchesSearchTerm && matchesStatusFilter && matchesPriorityFilter;
   });
 
+  // Sorting Tasks
   const [sortBy, setSortBy] = useState<string>("newest");
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (sortBy === "oldest") {
+    if (sortBy === "newest") {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else if (sortBy === "newest") {
+    } else if (sortBy === "oldest") {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    } else if (sortBy === "due-latest") {
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     } else if (sortBy === "due-earliest") {
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    } else if (sortBy === "due-latest") {
       return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
     }
     return 0;
   });
+
+  //Edit task
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const handleSave = (updatedTask: Task) => {
+    setTaskItems((currentTask) =>
+      currentTask.map((task) =>
+        task.id === updatedTask.id ? updatedTask : task,
+      ),
+    );
+
+    setEditingTask(null);
+  };
+
+  const handleCancel = () => {
+    setEditingTask(null);
+  };
 
   return (
     <>
@@ -102,6 +123,15 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         </div>
       </div>
 
+      {editingTask && (
+        <EditTaskForm
+          key={editingTask.id}
+          task={editingTask}
+          onSave={handleSave}
+          onCancel={handleCancel}
+        />
+      )}
+
       <div className="mt-6 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredTasks.length === 0 && taskItems.length > 0 ? (
           <div className="col-span-full text-center">
@@ -113,13 +143,17 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               key={task.id}
               task={task}
               onComplete={handleStatusChange}
+              onEdit={() => setEditingTask(task)}
             />
           ))
         )}
-        {tasks.length === 0 && (
+        {taskItems.length === 0 && (
           <div className="col-span-full text-center">
             <p className="text-gray-500">No tasks yet.</p>
-            <p className="text-gray-500">Click on <span className="font-bold">+ New Task</span> to create one.</p>
+            <p className="text-gray-500">
+              Click on <span className="font-bold">+ New Task</span> to create
+              one.
+            </p>
           </div>
         )}
       </div>

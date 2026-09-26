@@ -5,9 +5,10 @@ import Task from "@/types/Tasks/task";
 type TaskCardProps = {
   task: Task;
   onComplete: (taskId: string, newStatus: string) => void;
+  onEdit: (task: Task) => void;
 };
 
-export default function TaskCard({ task, onComplete }: TaskCardProps) {
+export default function TaskCard({ task, onComplete, onEdit }: TaskCardProps) {
   const priorityColors = {
     high: "bg-red-100 text-red-700",
     medium: "bg-orange-100 text-orange-700",
@@ -64,6 +65,13 @@ export default function TaskCard({ task, onComplete }: TaskCardProps) {
           Mark as completed
         </button>
       )}
+
+      <button
+        className="mt-4 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+        onClick={() => onEdit(task)}
+      >
+        Edit Task
+      </button>
     </div>
   );
 }
