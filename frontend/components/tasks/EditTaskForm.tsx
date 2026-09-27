@@ -30,7 +30,7 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
     // Validate Title
     if (!formData.title.trim()) {
       newError.title = "Title is required";
-    } else if (formData.title.length < 3) {
+    } else if (formData.title.trim().length < 3) {
       newError.title = "Title must be at least 3 characters long or more";
     }
 
@@ -39,14 +39,9 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
       newError.priority = "Priority must be high, medium, or low";
     }
 
-    // Validate due date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of the day for comparison
-    
+    // Validate due date    
     if (!formData.dueDate) {
       newError.dueDate = "Due date is required";
-    } else if (new Date(formData.dueDate) < today) {
-      newError.dueDate = "Due date cannot be in the past";
     }
 
     if (Object.keys(newError).length > 0) {

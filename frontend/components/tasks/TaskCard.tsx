@@ -4,7 +4,7 @@ import Task from "@/types/Tasks/task";
 
 type TaskCardProps = {
   task: Task;
-  onComplete: (taskId: string, newStatus: string) => void;
+  onComplete: (taskId: string) => void;
   onEdit: (task: Task) => void;
 };
 
@@ -21,7 +21,7 @@ export default function TaskCard({ task, onComplete, onEdit }: TaskCardProps) {
   };
 
   const handleStatusChange = () => {
-    onComplete(task.id, "completed");
+    onComplete(task.id);
   };
 
   return (
