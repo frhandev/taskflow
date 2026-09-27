@@ -2,9 +2,9 @@
 using System.ComponentModel.DataAnnotations;
 using TaskFlow.Api.Models.Enums;
 
-namespace TaskFlow.Api.Models;
+namespace TaskFlow.Api.DTOs.Tasks;
 
-public class CreateTaskDto
+public class CreateTaskDto : IValidatableObject
 {
     [Required]
     [MinLength(3)]

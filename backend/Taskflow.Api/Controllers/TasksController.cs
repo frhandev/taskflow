@@ -1,10 +1,7 @@
-
-
-using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 using TaskFlow.Api.Data;
+using TaskFlow.Api.DTOs.Tasks;
 using TaskFlow.Api.Models;
 
 namespace TaskFlow.Api.Controllers;
@@ -47,7 +44,7 @@ public class TasksController : ControllerBase
         var NewTaskItem = new TaskItem
         {
             Id = Guid.NewGuid(),
-            Title = createTaskDto.Title,
+            Title = createTaskDto.Title.Trim(),
             Description = createTaskDto.Description,
             Priority = createTaskDto.Priority,
             DueDate = createTaskDto.DueDate,
