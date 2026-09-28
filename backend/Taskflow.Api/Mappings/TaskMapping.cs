@@ -1,6 +1,8 @@
 using TaskFlow.Api.DTOs.Tasks;
 using TaskFlow.Api.Models;
 
+namespace TaskFlow.Api.Mappings;
+
 public static class TaskMapper
 {
     public static TaskDto ToDto(this TaskItem task)

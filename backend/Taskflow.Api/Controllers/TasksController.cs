@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Data;
 using TaskFlow.Api.DTOs.Tasks;
+using TaskFlow.Api.Mappings;
 using TaskFlow.Api.Models;
 
 namespace TaskFlow.Api.Controllers;
@@ -23,7 +24,7 @@ public class TasksController : ControllerBase
     {
         var tasks = await _context.Tasks.ToListAsync();
 
-        return Ok(tasks);
+        return Ok(tasks.Select(task => task.ToDto()));
     }
 
 
