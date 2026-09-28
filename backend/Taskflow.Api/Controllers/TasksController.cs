@@ -38,7 +38,7 @@ public class TasksController : ControllerBase
             return NotFound();
         }
 
-        return Ok(task);
+        return Ok(task.ToDto());
     }
 
     //Create a Task
@@ -60,7 +60,7 @@ public class TasksController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetTaskById), new { id = NewTaskItem.Id }, NewTaskItem);
+        return CreatedAtAction(nameof(GetTaskById), new { id = NewTaskItem.Id }, NewTaskItem.ToDto());
     }
 
     //Update a Task
@@ -81,7 +81,7 @@ public class TasksController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(task);
+        return Ok(task.ToDto());
     }
 
     //Mark Completed Endpoint
@@ -99,7 +99,7 @@ public class TasksController : ControllerBase
 
         await _context.SaveChangesAsync();
         
-        return Ok(task);
+        return Ok(task.ToDto());
     }
 
     //Delete Task
