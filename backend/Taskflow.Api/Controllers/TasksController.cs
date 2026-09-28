@@ -17,6 +17,7 @@ public class TasksController : ControllerBase
         _context = context;
     }
 
+    //Get All Tasks 
     [HttpGet]
     public async Task<IActionResult> GetTasks()
     {
@@ -25,6 +26,8 @@ public class TasksController : ControllerBase
         return Ok(tasks);
     }
 
+
+    //Get One Task By Id
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetTaskById(Guid id)
     {
@@ -38,6 +41,7 @@ public class TasksController : ControllerBase
         return Ok(task);
     }
 
+    //Create a Task
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto createTaskDto)
     {
@@ -45,7 +49,7 @@ public class TasksController : ControllerBase
         {
             Id = Guid.NewGuid(),
             Title = createTaskDto.Title.Trim(),
-            Description = createTaskDto.Description,
+            Description = createTaskDto.Description.Trim(),
             Priority = createTaskDto.Priority,
             DueDate = createTaskDto.DueDate,
             Status = Models.Enums.TaskStatus.Pending,
@@ -57,5 +61,47 @@ public class TasksController : ControllerBase
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetTaskById), new { id = NewTaskItem.Id }, NewTaskItem);
+    }
+
+    //Update a Task
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateTask([FromBody] UpdateTaskDto updateTaskDto, Guid id)
+    {
+        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        task.Title = updateTaskDto.Title.Trim();
+        task.Description = updateTaskDto.Description.Trim();
+        task.DueDate = updateTaskDto.DueDate;
+        task.Priority = updateTaskDto.Priority;
+
+        _context.Tasks.Update(task);
+
+        await _context.SaveChangesAsync();
+
+        return Ok(task);
+    }
+
+    //Mark Completed Endpoint
+    [HttpPatch("{id:guid}/complete")]
+    public async Task<IActionResult> CompleteTask(Guid id)
+    {
+        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        task.Status = Models.Enums.TaskStatus.Completed;
+        _context.Update(task);
+
+        await _context.SaveChangesAsync();
+        
+        return Ok(task);
     }
 }
