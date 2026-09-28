@@ -79,8 +79,6 @@ public class TasksController : ControllerBase
         task.DueDate = updateTaskDto.DueDate;
         task.Priority = updateTaskDto.Priority;
 
-        _context.Tasks.Update(task);
-
         await _context.SaveChangesAsync();
 
         return Ok(task);
@@ -98,10 +96,27 @@ public class TasksController : ControllerBase
         }
 
         task.Status = Models.Enums.TaskStatus.Completed;
-        _context.Update(task);
 
         await _context.SaveChangesAsync();
         
         return Ok(task);
+    }
+
+    //Delete Task
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteTask(Guid id)
+    {
+        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+
+        if (task == null)
+        {
+            return NotFound();
+        }
+
+        _context.Tasks.Remove(task);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }

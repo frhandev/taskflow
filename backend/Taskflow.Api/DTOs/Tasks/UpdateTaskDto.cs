@@ -15,6 +15,5 @@ public class UpdateTaskDto
     public string Description {get; set;} = string.Empty;
     public TaskPriority Priority {get; set;}
     
-    [Required]
     public DateTime DueDate { get; set; }
 }
