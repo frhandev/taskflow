@@ -1,7 +1,7 @@
 "use client";
 
 import { createTask } from "@/lib/api/tasks";
-import createTaskRequest from "@/types/Tasks/createTaskRequest";
+import CreateTaskRequest from "@/types/Tasks/CreateTaskRequest";
 import FormErrors from "@/types/Tasks/FormErrors";
 import Priority from "@/types/Tasks/priority";
 import TaskFormData from "@/types/Tasks/taskFormData";
@@ -59,7 +59,7 @@ function TaskForm() {
     setError({}); // Clear errors if form is valid
 
     // Form is valid
-    const newTask: createTaskRequest = {
+    const newTask: CreateTaskRequest = {
       title: formData.title.trim(),
       description: formData.description.trim(),
       priority: formData.priority,

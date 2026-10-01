@@ -1,10 +1,10 @@
 import Priority from "./priority";
 
-type createTaskRequest = {
+type CreateTaskRequest = {
     title: string;
     description: string;
     priority: Priority;
     dueDate: string;
 }
 
-export default createTaskRequest;
+export default CreateTaskRequest;

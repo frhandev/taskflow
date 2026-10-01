@@ -4,6 +4,7 @@ import Task from "@/types/Tasks/task";
 import TaskCard from "./TaskCard";
 import { useState } from "react";
 import EditTaskForm from "./EditTaskForm";
+import { completeTask } from "@/lib/api/tasks";
 
 function TaskList({ tasks }: { tasks: Task[] }) {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -12,18 +13,24 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 
   const [taskItems, setTaskItems] = useState<Task[]>(tasks);
 
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+
   //Status Changing
-  const handleStatusChange = (taskId: string) => {
-    setTaskItems((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: "completed",
-            }
-          : task,
-      ),
-    );
+  const handleStatusChange = async (taskId: string) => {
+    setCompletingTaskId(taskId);
+    try {
+      const completedTask = await completeTask(taskId);
+      setTaskItems((currentTasks) =>
+        currentTasks.map((task) => (task.id === taskId ? completedTask : task)),
+      );
+    } catch (error) {
+      setActionError(
+        `Failed to complete task. Please try again. Error: ${error}`,
+      );
+    } finally {
+      setCompletingTaskId(null);
+    }
   };
 
   //Task Filtering
@@ -144,6 +151,8 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               task={task}
               onComplete={handleStatusChange}
               onEdit={() => setEditingTask(task)}
+              actionError={actionError}
+              completingTaskId={completingTaskId}
             />
           ))
         )}

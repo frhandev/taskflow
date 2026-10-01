@@ -6,9 +6,11 @@ type TaskCardProps = {
   task: Task;
   onComplete: (taskId: string) => void;
   onEdit: (task: Task) => void;
+  actionError?: string | null;
+  completingTaskId?: string | null;
 };
 
-export default function TaskCard({ task, onComplete, onEdit }: TaskCardProps) {
+export default function TaskCard({ task, onComplete, onEdit, actionError, completingTaskId }: TaskCardProps) {
   const priorityColors = {
     high: "bg-red-100 text-red-700",
     medium: "bg-orange-100 text-orange-700",
@@ -62,8 +64,12 @@ export default function TaskCard({ task, onComplete, onEdit }: TaskCardProps) {
           className="mt-4 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
           onClick={handleStatusChange}
         >
-          Mark as completed
+          {completingTaskId === task.id ? "Completing..." : "Mark as Completed"}
         </button>
+      )}
+
+      {actionError && (
+        <p className="mt-2 text-sm text-red-500">{actionError}</p>
       )}
 
       <button
