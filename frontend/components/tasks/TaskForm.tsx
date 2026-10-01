@@ -1,9 +1,11 @@
 "use client";
 
+import { createTask } from "@/lib/api/tasks";
+import createTaskRequest from "@/types/Tasks/createTaskRequest";
 import FormErrors from "@/types/Tasks/FormErrors";
 import Priority from "@/types/Tasks/priority";
-import Task from "@/types/Tasks/task";
 import TaskFormData from "@/types/Tasks/taskFormData";
+import { useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
 
 function TaskForm() {
@@ -16,9 +18,13 @@ function TaskForm() {
 
   const [error, setError] = useState<FormErrors>({});
 
-  const [successMessage, setSuccessMessage] = useState<string>("");
+  const router = useRouter();
 
-  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const newError: FormErrors = {};
@@ -37,8 +43,8 @@ function TaskForm() {
 
     // Validate due date
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to start of the day for comparison
-    
+    today.setHours(0, 0, 0, 0);
+
     if (!formData.dueDate) {
       newError.dueDate = "Due date is required";
     } else if (new Date(formData.dueDate) < today) {
@@ -51,20 +57,29 @@ function TaskForm() {
     }
 
     setError({}); // Clear errors if form is valid
-    setSuccessMessage("Task created successfully!");
 
     // Form is valid
-    const newTask: Task = {
-      id: crypto.randomUUID(),
-      status: "pending",
+    const newTask: createTaskRequest = {
       title: formData.title.trim(),
       description: formData.description.trim(),
       priority: formData.priority,
-      dueDate: new Date(formData.dueDate),
-      createdAt: new Date(Date.now()),
+      dueDate: `${formData.dueDate}T00:00:00.000Z`,
     };
 
-    console.log(newTask);
+    setIsSubmitting(true);
+    setSubmissionError(null);
+
+    try {
+      await createTask(newTask);
+      router.push("/tasks");
+      router.refresh();
+    } catch (err) {
+      setSubmissionError(
+        `Failed to create task. Please try again. Error: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -102,10 +117,12 @@ function TaskForm() {
         Task Priority
       </label>
       <select
-      id="priority"
+        id="priority"
         className="border p-2 rounded"
         value={formData.priority}
-        onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
+        onChange={(e) =>
+          setFormData({ ...formData, priority: e.target.value as Priority })
+        }
       >
         <option value="low">Low</option>
         <option value="medium">Medium</option>
@@ -129,13 +146,14 @@ function TaskForm() {
 
       <button
         type="submit"
-        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
+        disabled={isSubmitting}
       >
-        Create Task
+        {isSubmitting ? "Creating..." : "Create Task"}
       </button>
-        {successMessage && (
-          <p className="text-green-500 text-sm">{successMessage}</p>
-        )}
+      {submissionError && (
+        <p className="text-red-500 text-sm">{submissionError}</p>
+      )}
     </form>
   );
 }
