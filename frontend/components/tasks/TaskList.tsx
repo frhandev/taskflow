@@ -19,6 +19,8 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   //Status Changing
   const handleStatusChange = async (taskId: string) => {
     setCompletingTaskId(taskId);
+    setActionError(null);
+
     try {
       const completedTask = await completeTask(taskId);
       setTaskItems((currentTasks) =>
@@ -139,6 +141,9 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         />
       )}
 
+      {actionError && (
+        <p className="mt-2 text-sm text-red-500">{actionError}</p>
+      )}
       <div className="mt-6 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {filteredTasks.length === 0 && taskItems.length > 0 ? (
           <div className="col-span-full text-center">
@@ -151,7 +156,6 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               task={task}
               onComplete={handleStatusChange}
               onEdit={() => setEditingTask(task)}
-              actionError={actionError}
               completingTaskId={completingTaskId}
             />
           ))
