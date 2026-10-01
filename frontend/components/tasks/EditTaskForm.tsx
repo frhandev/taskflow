@@ -1,6 +1,5 @@
 "use client";
 
-import { updateTask } from "@/lib/api/tasks";
 import FormErrors from "@/types/Tasks/FormErrors";
 import Priority from "@/types/Tasks/priority";
 import Task from "@/types/Tasks/task";
@@ -57,9 +56,8 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
     setError({});
 
     const updatedTask: UpdateTaskRequest = {
-      ...task,
-      title: formData.title,
-      description: formData.description,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
       priority: formData.priority,
       dueDate: `${formData.dueDate}T00:00:00.000Z`,
     };
@@ -69,9 +67,10 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
 
     try {
       await onSave(updatedTask);
-
     } catch (error) {
-      setSubmissionError(`Failed to update task. Please try again. Error: ${error}`);
+      setSubmissionError(
+        `Failed to update task. Please try again. Error: ${error}`,
+      );
     } finally {
       setIsSaving(false);
     }
@@ -155,7 +154,8 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border px-4 py-2"
+          className="rounded border px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSaving}
         >
           Cancel
         </button>

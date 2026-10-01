@@ -7,9 +7,18 @@ type TaskCardProps = {
   onComplete: (taskId: string) => Promise<void>;
   onEdit: (task: Task) => void;
   completingTaskId?: string | null;
+  isDeleting: boolean;
+  onDelete: (taskId: string) => Promise<void>;
 };
 
-export default function TaskCard({ task, onComplete, onEdit, completingTaskId }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onComplete,
+  onEdit,
+  completingTaskId,
+  isDeleting,
+  onDelete
+}: TaskCardProps) {
   const priorityColors = {
     high: "bg-red-100 text-red-700",
     medium: "bg-orange-100 text-orange-700",
@@ -73,6 +82,15 @@ export default function TaskCard({ task, onComplete, onEdit, completingTaskId }:
         onClick={() => onEdit(task)}
       >
         Edit Task
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onDelete(task.id)}
+        disabled={isDeleting}
+        className="mt-2 w-full rounded bg-red-500 px-4 py-2 text-white disabled:opacity-50"
+      >
+        {isDeleting ? "Deleting..." : "Delete Task"}
       </button>
     </div>
   );

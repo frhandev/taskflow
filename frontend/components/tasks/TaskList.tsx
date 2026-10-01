@@ -4,7 +4,11 @@ import Task from "@/types/Tasks/task";
 import TaskCard from "./TaskCard";
 import { useState } from "react";
 import EditTaskForm from "./EditTaskForm";
-import { completeTask, updateTask } from "@/lib/api/tasks";
+import {
+  completeTask,
+  deleteTask,
+  updateTask,
+} from "@/lib/api/tasks";
 import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 
 function TaskList({ tasks }: { tasks: Task[] }) {
@@ -86,6 +90,34 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     setEditingTask(null);
   };
 
+  //Delete Task
+  const [deletingTask, setDeletingTask] = useState<string | null>(null);
+
+  const handleDelete = async (taskId: string) => {
+    setDeletingTask(taskId);
+    setActionError(null);
+
+    try {
+      await deleteTask(taskId);
+
+      setTaskItems((currentTasks) =>
+        currentTasks.filter((task) => task.id !== taskId),
+      );
+
+      if (editingTask?.id === taskId) {
+      setEditingTask(null);
+    }
+    } catch (error) {
+      setActionError(
+        `Failed to delete task. Please try again. Error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+    }finally {
+      setDeletingTask(null)
+    }
+  };
+
   return (
     <>
       <div className="flex gap-10">
@@ -162,6 +194,8 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               onComplete={handleStatusChange}
               onEdit={() => setEditingTask(task)}
               completingTaskId={completingTaskId}
+              onDelete = {handleDelete}
+              isDeleting = {deletingTask === task.id}
             />
           ))
         )}
