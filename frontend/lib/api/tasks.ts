@@ -78,12 +78,9 @@ export async function updateTask(taskId: string, updatedTask: UpdateTaskRequest)
 export async function deleteTask(taskId: string) : Promise<void> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
   });
 
   if(!response.ok) {
-    throw new Error(`Error updating task: ${response.status}`)
+    throw new Error(`Error deleting task: ${response.status}`)
   }
 }

@@ -4,11 +4,7 @@ import Task from "@/types/Tasks/task";
 import TaskCard from "./TaskCard";
 import { useState } from "react";
 import EditTaskForm from "./EditTaskForm";
-import {
-  completeTask,
-  deleteTask,
-  updateTask,
-} from "@/lib/api/tasks";
+import { completeTask, deleteTask, updateTask } from "@/lib/api/tasks";
 import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 
 function TaskList({ tasks }: { tasks: Task[] }) {
@@ -97,6 +93,12 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     setDeletingTask(taskId);
     setActionError(null);
 
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this task?",
+    );
+
+    if (!isConfirmed) return;
+
     try {
       await deleteTask(taskId);
 
@@ -105,16 +107,16 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       );
 
       if (editingTask?.id === taskId) {
-      setEditingTask(null);
-    }
+        setEditingTask(null);
+      }
     } catch (error) {
       setActionError(
         `Failed to delete task. Please try again. Error: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
       );
-    }finally {
-      setDeletingTask(null)
+    } finally {
+      setDeletingTask(null);
     }
   };
 
@@ -194,8 +196,8 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               onComplete={handleStatusChange}
               onEdit={() => setEditingTask(task)}
               completingTaskId={completingTaskId}
-              onDelete = {handleDelete}
-              isDeleting = {deletingTask === task.id}
+              onDelete={handleDelete}
+              isDeleting={deletingTask === task.id}
             />
           ))
         )}
