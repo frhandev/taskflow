@@ -5,6 +5,14 @@ using TaskFlow.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000/").AllowAnyHeader().AllowAnyMethod();
+    });
+});
+
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -21,6 +29,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
+app.UseCors("Frontend");
 app.MapControllers();
 app.Run();
 

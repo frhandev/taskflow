@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Task from "@/types/Tasks/task";
-import { mockTasks } from "@/lib/data/tasks";
 import TaskList from "@/components/tasks/TaskList";
+import { getTasks } from "@/lib/api/tasks";
 
-function TasksPage() {
-  const tasks: Task[] = mockTasks;
+async function TasksPage() {
+  const tasks: Task[] = await getTasks();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 gap-3 w-full">
