@@ -4,7 +4,8 @@ import Task from "@/types/Tasks/task";
 import TaskCard from "./TaskCard";
 import { useState } from "react";
 import EditTaskForm from "./EditTaskForm";
-import { completeTask } from "@/lib/api/tasks";
+import { completeTask, updateTask } from "@/lib/api/tasks";
+import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 
 function TaskList({ tasks }: { tasks: Task[] }) {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -67,9 +68,13 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   //Edit task
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const handleSave = (updatedTask: Task) => {
-    setTaskItems((currentTask) =>
-      currentTask.map((task) =>
+  const handleSave = async (request: UpdateTaskRequest) => {
+    if (!editingTask) return;
+
+    const updatedTask = await updateTask(editingTask.id, request);
+
+    setTaskItems((currentTasks) =>
+      currentTasks.map((task) =>
         task.id === updatedTask.id ? updatedTask : task,
       ),
     );

@@ -1,6 +1,7 @@
 import CreateTaskRequest from "@/types/Tasks/CreateTaskRequest";
 import Task from "@/types/Tasks/task";
 import TaskApiDto from "@/types/Tasks/TaskApiDto";
+import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 
 function mapTaskDto(task: TaskApiDto): Task {
   return {
@@ -54,4 +55,22 @@ export async function completeTask(taskId: string): Promise<Task> {
   const data: TaskApiDto = await response.json();
 
   return mapTaskDto(data);
+}
+
+export async function updateTask(taskId: string, updatedTask: UpdateTaskRequest) : Promise<Task> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updatedTask),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error updating task: ${response.status}`);
+  }
+
+  const task: TaskApiDto = await response.json();
+
+  return mapTaskDto(task);
 }

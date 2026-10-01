@@ -1,31 +1,36 @@
 "use client";
 
+import { updateTask } from "@/lib/api/tasks";
 import FormErrors from "@/types/Tasks/FormErrors";
 import Priority from "@/types/Tasks/priority";
 import Task from "@/types/Tasks/task";
+import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 import { SubmitEventHandler, useState } from "react";
 
 type EditTaskFormProps = {
   task: Task;
-  onSave: (updatedTask: Task) => void;
+  onSave: (updatedTask: UpdateTaskRequest) => Promise<void>;
   onCancel: () => void;
 };
 
 function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
-
   const [formData, setFormData] = useState({
     title: task.title,
     description: task.description,
     priority: task.priority,
-    dueDate: task.dueDate.toISOString().split('T')[0],
+    dueDate: task.dueDate.toISOString().split("T")[0],
   });
 
   const [error, setError] = useState<FormErrors>({});
 
-  const handleSubmit : SubmitEventHandler = (e) => {
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const handleSubmit: SubmitEventHandler = async (e) => {
     e.preventDefault();
 
-    const newError : FormErrors = {};
+    const newError: FormErrors = {};
 
     // Validate Title
     if (!formData.title.trim()) {
@@ -39,7 +44,7 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
       newError.priority = "Priority must be high, medium, or low";
     }
 
-    // Validate due date    
+    // Validate due date
     if (!formData.dueDate) {
       newError.dueDate = "Due date is required";
     }
@@ -49,18 +54,28 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
       return;
     }
 
-    setError({}); // Clear errors if form is valid
+    setError({});
 
-    const updatedTask : Task = {
-        ...task, 
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        priority: formData.priority,
-        dueDate: new Date(formData.dueDate),
+    const updatedTask: UpdateTaskRequest = {
+      ...task,
+      title: formData.title,
+      description: formData.description,
+      priority: formData.priority,
+      dueDate: `${formData.dueDate}T00:00:00.000Z`,
+    };
+
+    setIsSaving(true);
+    setSubmissionError(null);
+
+    try {
+      await onSave(updatedTask);
+
+    } catch (error) {
+      setSubmissionError(`Failed to update task. Please try again. Error: ${error}`);
+    } finally {
+      setIsSaving(false);
     }
-
-    onSave(updatedTask)
-  }
+  };
 
   return (
     <form
@@ -97,10 +112,12 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
         Task Priority
       </label>
       <select
-      id="priority"
+        id="priority"
         className="border p-2 rounded"
         value={formData.priority}
-        onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
+        onChange={(e) =>
+          setFormData({ ...formData, priority: e.target.value as Priority })
+        }
       >
         <option value="low">Low</option>
         <option value="medium">Medium</option>
@@ -125,10 +142,15 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
       <div className="flex gap-3">
         <button
           type="submit"
-          className="rounded bg-blue-600 px-4 py-2 text-white"
+          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSaving}
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </button>
+
+        {submissionError && (
+          <p className="text-red-500 text-sm">{submissionError}</p>
+        )}
 
         <button
           type="button"
