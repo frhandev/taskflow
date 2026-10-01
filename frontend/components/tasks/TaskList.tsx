@@ -97,7 +97,10 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       "Are you sure you want to delete this task?",
     );
 
-    if (!isConfirmed) return;
+    if (!isConfirmed) {
+      setDeletingTask(null);
+      return;
+    }
 
     try {
       await deleteTask(taskId);
