@@ -1,8 +1,8 @@
-import { mockTasks } from "@/lib/data/tasks";
+import { getTasks } from "@/lib/api/tasks";
 
-function DashboardPage() {
+async function DashboardPage() {
 
-  const tasks = mockTasks; 
+  const tasks = await getTasks(); 
 
   const pendingTasks = tasks.filter(task => task.status === 'pending');
   const completedTasks = tasks.filter(task => task.status === 'completed');
