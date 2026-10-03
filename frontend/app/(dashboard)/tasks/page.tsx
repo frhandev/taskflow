@@ -6,6 +6,8 @@ import { getTasks } from "@/lib/api/tasks";
 async function TasksPage() {
   const tasks: Task[] = await getTasks();
 
+  
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2 gap-3 w-full">
       <h1 className="text-4xl font-bold">Tasks</h1>
