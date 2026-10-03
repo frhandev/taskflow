@@ -1,5 +1,6 @@
 type FormErrors = {
   title?: string;
+  description?: string;
   priority?: string;
   dueDate?: string;
 };

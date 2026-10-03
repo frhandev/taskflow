@@ -7,6 +7,8 @@ using TaskFlow.Api.Models;
 
 namespace TaskFlow.Api.Controllers;
 
+using TaskStatus = TaskFlow.Api.Models.Enums.TaskStatus;
+
 [ApiController]
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
@@ -22,7 +24,9 @@ public class TasksController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTasks()
     {
-        var tasks = await _context.Tasks.ToListAsync();
+        var tasks = await _context.Tasks
+            .AsNoTracking()
+            .ToListAsync();
 
         return Ok(tasks.Select(task => task.ToDto()));
     }
@@ -32,7 +36,9 @@ public class TasksController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetTaskById(Guid id)
     {
-        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+        var task = await _context.Tasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id);  
 
         if (task == null)
         {
@@ -46,22 +52,22 @@ public class TasksController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto createTaskDto)
     {
-        var NewTaskItem = new TaskItem
+        var newTaskItem = new TaskItem
         {
             Id = Guid.NewGuid(),
             Title = createTaskDto.Title.Trim(),
             Description = createTaskDto.Description.Trim(),
             Priority = createTaskDto.Priority,
             DueDate = createTaskDto.DueDate,
-            Status = Models.Enums.TaskStatus.Pending,
+            Status = TaskStatus.Pending,
             CreatedAt = DateTime.UtcNow,
         };
 
-        _context.Tasks.Add(NewTaskItem);
+        _context.Tasks.Add(newTaskItem);
 
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetTaskById), new { id = NewTaskItem.Id }, NewTaskItem.ToDto());
+        return CreatedAtAction(nameof(GetTaskById), new { id = newTaskItem.Id }, newTaskItem.ToDto());
     }
 
     //Update a Task
@@ -96,10 +102,10 @@ public class TasksController : ControllerBase
             return NotFound();
         }
 
-        task.Status = Models.Enums.TaskStatus.Completed;
+        task.Status = TaskStatus.Completed;
 
         await _context.SaveChangesAsync();
-        
+
         return Ok(task.ToDto());
     }
 

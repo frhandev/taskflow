@@ -1,5 +1,6 @@
 "use client";
 
+import { getErrorMessage } from "@/lib/utils/errors";
 import FormErrors from "@/types/Tasks/FormErrors";
 import Priority from "@/types/Tasks/priority";
 import Task from "@/types/Tasks/task";
@@ -29,13 +30,22 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
   const handleSubmit: SubmitEventHandler = async (e) => {
     e.preventDefault();
 
+    const trimmedTitle = formData.title.trim();
+    const trimmedDescription = formData.description.trim();
+
     const newError: FormErrors = {};
 
     // Validate Title
-    if (!formData.title.trim()) {
+    if (!trimmedTitle) {
       newError.title = "Title is required";
-    } else if (formData.title.trim().length < 3) {
-      newError.title = "Title must be at least 3 characters long or more";
+    } else if (trimmedTitle.length < 3) {
+      newError.title = "Title must be at least 3 characters long";
+    } else if (trimmedTitle.length > 150) {
+      newError.title = "Title must not exceed 150 characters";
+    }
+
+    if (trimmedDescription.length > 1000) {
+      newError.description = "Description must not exceed 1000 characters";
     }
 
     // Validate priority
@@ -56,8 +66,8 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
     setError({});
 
     const updatedTask: UpdateTaskRequest = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
+      title: trimmedTitle,
+      description: trimmedDescription,
       priority: formData.priority,
       dueDate: `${formData.dueDate}T00:00:00.000Z`,
     };
@@ -69,7 +79,7 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
       await onSave(updatedTask);
     } catch (error) {
       setSubmissionError(
-        `Failed to update task. Please try again. Error: ${error}`,
+        `Failed to update task. Please try again. Error: ${getErrorMessage(error)}`,
       );
     } finally {
       setIsSaving(false);
@@ -106,6 +116,9 @@ function EditTaskForm({ task, onSave, onCancel }: EditTaskFormProps) {
           setFormData({ ...formData, description: e.target.value })
         }
       />
+      {error.description && (
+        <p className="text-red-500 text-sm">{error.description}</p>
+      )}
 
       <label htmlFor="priority" className="font-semibold">
         Task Priority

@@ -6,6 +6,7 @@ import { useState } from "react";
 import EditTaskForm from "./EditTaskForm";
 import { completeTask, deleteTask, updateTask } from "@/lib/api/tasks";
 import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 function TaskList({ tasks }: { tasks: Task[] }) {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -29,7 +30,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       );
     } catch (error) {
       setActionError(
-        `Failed to complete task. Please try again. Error: ${error}`,
+        `Failed to complete task. Please try again. Error: ${getErrorMessage(error)}`,
       );
     } finally {
       setCompletingTaskId(null);
@@ -87,10 +88,10 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   };
 
   //Delete Task
-  const [deletingTask, setDeletingTask] = useState<string | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   const handleDelete = async (taskId: string) => {
-    setDeletingTask(taskId);
+    setDeletingTaskId(taskId);
     setActionError(null);
 
     const isConfirmed = window.confirm(
@@ -98,7 +99,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     );
 
     if (!isConfirmed) {
-      setDeletingTask(null);
+      setDeletingTaskId(null);
       return;
     }
 
@@ -114,12 +115,10 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       }
     } catch (error) {
       setActionError(
-        `Failed to delete task. Please try again. Error: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        `Failed to delete task. Please try again. Error: ${getErrorMessage(error)}`,
       );
     } finally {
-      setDeletingTask(null);
+      setDeletingTaskId(null);
     }
   };
 
@@ -146,9 +145,9 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         </div>
 
         <div>
-          <label htmlFor="priotityFilter">Priority:</label>
+          <label htmlFor="priorityFilter">Priority:</label>
           <select
-            id="priotityFilter"
+            id="priorityFilter"
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
           >
@@ -200,7 +199,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               onEdit={() => setEditingTask(task)}
               completingTaskId={completingTaskId}
               onDelete={handleDelete}
-              isDeleting={deletingTask === task.id}
+              isDeleting={deletingTaskId === task.id}
             />
           ))
         )}

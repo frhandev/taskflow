@@ -7,6 +7,7 @@ import Priority from "@/types/Tasks/priority";
 import TaskFormData from "@/types/Tasks/taskFormData";
 import { useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
+import { getErrorMessage } from "@/lib/utils/errors";
 
 function TaskForm() {
   const [formData, setFormData] = useState<TaskFormData>({
@@ -27,13 +28,22 @@ function TaskForm() {
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const trimmedTitle = formData.title.trim();
+    const trimmedDescription = formData.description.trim();
+
     const newError: FormErrors = {};
 
     // Validate Title
-    if (!formData.title.trim()) {
+    if (!trimmedTitle) {
       newError.title = "Title is required";
-    } else if (formData.title.length < 3) {
-      newError.title = "Title must be at least 3 characters long or more";
+    } else if (trimmedTitle.length < 3) {
+      newError.title = "Title must be at least 3 characters long";
+    } else if (trimmedTitle.length > 150) {
+      newError.title = "Title must not exceed 150 characters";
+    }
+
+    if (trimmedDescription.length > 1000) {
+      newError.description = "Description must not exceed 1000 characters";
     }
 
     // Validate priority
@@ -60,8 +70,8 @@ function TaskForm() {
 
     // Form is valid
     const newTask: CreateTaskRequest = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
+      title: trimmedTitle,
+      description: trimmedDescription,
       priority: formData.priority,
       dueDate: `${formData.dueDate}T00:00:00.000Z`,
     };
@@ -73,9 +83,9 @@ function TaskForm() {
       await createTask(newTask);
       router.push("/tasks");
       router.refresh();
-    } catch (err) {
+    } catch (error) {
       setSubmissionError(
-        `Failed to create task. Please try again. Error: ${err instanceof Error ? err.message : "Unknown error"}`,
+        `Failed to create task. Please try again. Error: ${getErrorMessage(error)}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -105,6 +115,7 @@ function TaskForm() {
       </label>
       <textarea
         id="description"
+        maxLength={1000}
         placeholder="Task Description"
         className="border p-2 rounded"
         value={formData.description}
@@ -112,6 +123,9 @@ function TaskForm() {
           setFormData({ ...formData, description: e.target.value })
         }
       />
+      {error.description && (
+        <p className="text-red-500 text-sm">{error.description}</p>
+      )}
 
       <label htmlFor="priority" className="font-semibold">
         Task Priority
