@@ -6,11 +6,7 @@ import Link from "next/link";
 import Task from "@/types/Tasks/task";
 import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 
-import {
-  completeTask,
-  deleteTask,
-  updateTask,
-} from "@/lib/api/tasks";
+import { completeTask, deleteTask, updateTask } from "@/lib/api/tasks";
 
 import { getErrorMessage } from "@/lib/utils/errors";
 
@@ -50,9 +46,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 
   // Action states
   const [actionError, setActionError] = useState<string | null>(null);
-  const [completingTaskId, setCompletingTaskId] = useState<string | null>(
-    null,
-  );
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   // Editing
@@ -70,9 +64,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       const completedTask = await completeTask(taskId);
 
       setTaskItems((currentTasks) =>
-        currentTasks.map((task) =>
-          task.id === taskId ? completedTask : task,
-        ),
+        currentTasks.map((task) => (task.id === taskId ? completedTask : task)),
       );
     } catch (error) {
       setActionError(
@@ -129,12 +121,12 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       if (editingTask?.id === taskId) {
         setEditingTask(null);
       }
-
-      setDeletingTaskId(null);
     } catch (error) {
       setActionError(
         `Failed to delete task. Please try again. Error: ${getErrorMessage(error)}`,
       );
+
+      throw error;
     }
   };
 
@@ -172,27 +164,19 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     switch (sortBy) {
       case "newest":
         return (
-          new Date(b.createdAt).getTime() -
-          new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
       case "oldest":
         return (
-          new Date(a.createdAt).getTime() -
-          new Date(b.createdAt).getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
 
       case "due-earliest":
-        return (
-          new Date(a.dueDate).getTime() -
-          new Date(b.dueDate).getTime()
-        );
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
 
       case "due-latest":
-        return (
-          new Date(b.dueDate).getTime() -
-          new Date(a.dueDate).getTime()
-        );
+        return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
 
       case "priority":
         return priorityOrder[b.priority] - priorityOrder[a.priority];
@@ -215,9 +199,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 
       <section className="intro">
         <div>
-          <p className="eyebrow">
-            A little structure. A lot of possibility.
-          </p>
+          <p className="eyebrow">A little structure. A lot of possibility.</p>
 
           <h1>Your next big thing.</h1>
 
@@ -258,9 +240,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
                 <span>
                   {status === "all"
                     ? taskItems.length
-                    : taskItems.filter(
-                        (task) => task.status === status,
-                      ).length}
+                    : taskItems.filter((task) => task.status === status).length}
                 </span>
               </button>
             ))}
@@ -271,9 +251,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               <button
                 type="button"
                 key={mode}
-                className={`icon-button ${
-                  view === mode ? "selected" : ""
-                }`}
+                className={`icon-button ${view === mode ? "selected" : ""}`}
                 aria-label={`${mode} view`}
                 aria-pressed={view === mode}
                 onClick={() => setView(mode)}
@@ -296,9 +274,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
               value={searchTerm}
               placeholder="Find a task…"
               aria-label="Find a task"
-              onChange={(event) =>
-                setSearchTerm(event.target.value)
-              }
+              onChange={(event) => setSearchTerm(event.target.value)}
             />
 
             <kbd>/</kbd>
@@ -310,11 +286,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
             value={priorityFilter}
             onChange={(event) =>
               setPriorityFilter(
-                event.target.value as
-                  | "all"
-                  | "high"
-                  | "medium"
-                  | "low",
+                event.target.value as "all" | "high" | "medium" | "low",
               )
             }
           >
@@ -328,9 +300,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
             id="sort-filter"
             aria-label="Sort tasks"
             value={sortBy}
-            onChange={(event) =>
-              setSortBy(event.target.value as SortOption)
-            }
+            onChange={(event) => setSortBy(event.target.value as SortOption)}
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -352,13 +322,10 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 
         <div className="results-heading">
           <span>
-            {sortedTasks.length}{" "}
-            {sortedTasks.length === 1 ? "task" : "tasks"}
+            {sortedTasks.length} {sortedTasks.length === 1 ? "task" : "tasks"}
           </span>
 
-          <span className="tiny-label">
-            LET&apos;S GET INTO IT ↗
-          </span>
+          <span className="tiny-label">LET&apos;S GET INTO IT ↗</span>
         </div>
 
         {/* Results */}

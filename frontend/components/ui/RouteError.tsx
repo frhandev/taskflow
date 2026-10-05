@@ -1,15 +1,25 @@
 "use client";
+
+import { useEffect } from "react";
+
 export default function RouteError({
-  retry,
+  error,
+  reset,
 }: {
   error: Error & { digest?: string };
-  retry: () => void;
+  reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
     <div className="empty-state">
       <h2>Something went wrong.</h2>
+
       <p>Please try loading your workspace again.</p>
-      <button className="button dark" onClick={retry}>
+
+      <button className="button dark" onClick={reset}>
         Try again
       </button>
     </div>
