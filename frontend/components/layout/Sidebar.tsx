@@ -56,7 +56,7 @@ function Sidebar({
         })}
       </nav>
       <div className="sidebar-bottom">
-        <div className="mini-note">
+        <div className="mini-note mb-10">
           <span className="note-star" aria-hidden="true">
             ✳
           </span>
@@ -64,6 +64,16 @@ function Sidebar({
           <p>One thing at a time is a pretty good plan.</p>
           <div className="note-line" />
         </div>
+        {/* <Link className="profile" href="/settings" onClick={onClose}>
+          <span className="avatar">
+            Alex
+          </span>
+          <span>
+            <strong>Alex</strong>
+            <small>Local Mode</small>
+          </span>
+          <Icon name="settings" />
+        </Link> */}
       </div>
     </aside>
   );

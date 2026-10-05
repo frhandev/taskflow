@@ -1,6 +1,7 @@
 "use client";
 
 import Task from "@/types/Tasks/task";
+import Icon from "../ui/Icon";
 
 type TaskCardProps = {
   task: Task;
@@ -8,7 +9,8 @@ type TaskCardProps = {
   onEdit: (task: Task) => void;
   completingTaskId?: string | null;
   isDeleting: boolean;
-  onDelete: (taskId: string) => Promise<void>;
+  onDelete: (taskId: string) => void;
+  card: boolean;
 };
 
 export default function TaskCard({
@@ -17,81 +19,118 @@ export default function TaskCard({
   onEdit,
   completingTaskId,
   isDeleting,
-  onDelete
+  onDelete,
+  card,
 }: TaskCardProps) {
-  const priorityColors = {
-    high: "bg-red-100 text-red-700",
-    medium: "bg-orange-100 text-orange-700",
-    low: "bg-green-100 text-green-700",
-  };
+  const isCompleted = task.status === "completed";
 
-  const statusColors = {
-    completed: "bg-green-100 text-green-700",
-    pending: "bg-yellow-100 text-yellow-700",
-  };
+  const isCompleting = completingTaskId === task.id;
 
-  const handleStatusChange = () => {
-    onComplete(task.id);
+  const isBusy = isCompleting || isDeleting;
+
+  const dueDate = new Date(task.dueDate);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dueDateOnly = new Date(dueDate);
+  dueDateOnly.setHours(0, 0, 0, 0);
+
+  const isOverdue =
+    !isCompleted &&
+    dueDateOnly < today;
+
+  const dueDateLabel = dueDate.toLocaleDateString();
+
+  const handleComplete = async () => {
+    if (isCompleted || isBusy) return;
+
+    await onComplete(task.id);
   };
 
   return (
-    <div className="rounded-lg border p-4 shadow-sm">
-      <h3 className="text-lg font-semibold">{task.title}</h3>
-
-      <p className="mt-2 text-gray-600">{task.description}</p>
-
-      <div className="mt-4 flex gap-2">
-        {/* Status Badge */}
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            statusColors[task.status]
-          }`}
-        >
-          {task.status}
-        </span>
-
-        {/* Priority Badge */}
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            priorityColors[task.priority]
-          }`}
-        >
-          {task.priority}
-        </span>
-      </div>
-
-      <p className="mt-2 text-sm text-gray-500">
-        Due: {task.dueDate.toLocaleDateString()}
-      </p>
-      <p className="mt-1 text-sm text-gray-500">
-        Created: {task.createdAt.toLocaleDateString()}
-      </p>
-
-      {task.status === "pending" && (
-        <button
-          className="mt-4 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={handleStatusChange}
-          disabled={completingTaskId === task.id}
-        >
-          {completingTaskId === task.id ? "Completing..." : "Mark as Completed"}
-        </button>
-      )}
-
-      <button
-        className="mt-4 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-        onClick={() => onEdit(task)}
-      >
-        Edit Task
-      </button>
+    <article
+      className={`task-row ${card ? "task-card" : ""} ${
+        isCompleted ? "is-done" : ""
+      }`}
+    >
+      {/* Complete */}
 
       <button
         type="button"
-        onClick={() => onDelete(task.id)}
-        disabled={isDeleting}
-        className="mt-2 w-full rounded bg-red-500 px-4 py-2 text-white disabled:opacity-50"
+        className={`task-check ${isCompleted ? "checked" : ""}`}
+        disabled={isBusy || isCompleted}
+        onClick={() => void handleComplete()}
+        aria-label={
+          isCompleted
+            ? `Completed: ${task.title}`
+            : `Complete: ${task.title}`
+        }
+        aria-pressed={isCompleted}
       >
-        {isDeleting ? "Deleting..." : "Delete Task"}
+        {isCompleted && <Icon name="check" />}
       </button>
-    </div>
+
+      {/* Task content */}
+
+      <div className="task-copy">
+        <button
+          type="button"
+          className="task-title"
+          onClick={() => onEdit(task)}
+          disabled={isBusy}
+        >
+          {task.title}
+        </button>
+
+        <p>{task.description || "—"}</p>
+      </div>
+
+      {/* Priority */}
+
+      <span className={`priority-badge ${task.priority}`}>
+        <i />
+        {task.priority}
+      </span>
+
+      {/* Due date */}
+
+      <span
+        className={`task-date ${
+          isOverdue ? "is-overdue" : ""
+        }`}
+      >
+        <Icon name="calendar" />
+
+        <span>
+          {isOverdue && "Overdue · "}
+          {dueDateLabel}
+        </span>
+      </span>
+
+      {/* Actions */}
+
+      <div className="task-actions">
+        <button
+          type="button"
+          className="icon-button"
+          onClick={() => onEdit(task)}
+          disabled={isBusy}
+          aria-label={`Edit ${task.title}`}
+        >
+          <Icon name="edit" />
+        </button>
+
+        <button
+          type="button"
+          className="icon-button danger-button"
+          onClick={() => onDelete(task.id)}
+          disabled={isBusy}
+          aria-label={`Delete ${task.title}`}
+        >
+          <Icon name="trash" />
+        </button>
+      </div>
+    </article>
   );
 }

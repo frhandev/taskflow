@@ -1,64 +1,122 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { createTask } from "@/lib/api/tasks";
+import { getErrorMessage } from "@/lib/utils/errors";
+
 import CreateTaskRequest from "@/types/Tasks/CreateTaskRequest";
+import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
 import FormErrors from "@/types/Tasks/FormErrors";
 import Priority from "@/types/Tasks/priority";
 import TaskFormData from "@/types/Tasks/taskFormData";
-import { useRouter } from "next/navigation";
-import { SubmitEvent, useState } from "react";
-import { getErrorMessage } from "@/lib/utils/errors";
+import Task from "@/types/Tasks/task";
 
-function TaskForm() {
+import Icon from "../ui/Icon";
+
+type TaskFormProps = {
+  task?: Task;
+  initialDate?: string;
+  onSave?: (request: UpdateTaskRequest) => Promise<void>;
+  onCancel?: () => void;
+};
+
+function formatDateForInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getTodayDate(): string {
+  return formatDateForInput(new Date());
+}
+
+function TaskForm({
+  task,
+  initialDate,
+  onSave,
+  onCancel,
+}: TaskFormProps) {
+  const router = useRouter();
+
+  const isEditing = Boolean(task);
+
   const [formData, setFormData] = useState<TaskFormData>({
-    title: "",
-    description: "",
-    priority: "medium",
-    dueDate: "",
+    title: task?.title ?? "",
+    description: task?.description ?? "",
+    priority: task?.priority ?? "medium",
+    dueDate: task
+      ? formatDateForInput(task.dueDate)
+      : initialDate ?? getTodayDate(),
   });
 
   const [error, setError] = useState<FormErrors>({});
 
-  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(
+    null,
+  );
 
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const cancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
 
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    router.push("/tasks");
+  };
+
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    if (isSubmitting) return;
 
     const trimmedTitle = formData.title.trim();
     const trimmedDescription = formData.description.trim();
 
     const newError: FormErrors = {};
 
-    // Validate Title
+    // Title
     if (!trimmedTitle) {
       newError.title = "Title is required";
     } else if (trimmedTitle.length < 3) {
-      newError.title = "Title must be at least 3 characters long";
+      newError.title =
+        "Title must be at least 3 characters long";
     } else if (trimmedTitle.length > 150) {
-      newError.title = "Title must not exceed 150 characters";
+      newError.title =
+        "Title must not exceed 150 characters";
     }
 
+    // Description
     if (trimmedDescription.length > 1000) {
-      newError.description = "Description must not exceed 1000 characters";
+      newError.description =
+        "Description must not exceed 1000 characters";
     }
 
-    // Validate priority
+    // Priority
     if (!["high", "medium", "low"].includes(formData.priority)) {
-      newError.priority = "Priority must be high, medium, or low";
+      newError.priority =
+        "Priority must be high, medium, or low";
     }
 
-    // Validate due date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (!formData.dueDate) {
+    // Due Date
+    if (
+      !formData.dueDate ||
+      !Number.isFinite(Date.parse(formData.dueDate))
+    ) {
       newError.dueDate = "Due date is required";
-    } else if (new Date(formData.dueDate) < today) {
-      newError.dueDate = "Due date cannot be in the past";
+    } else if (
+      !isEditing &&
+      formData.dueDate < getTodayDate()
+    ) {
+      newError.dueDate =
+        "Due date cannot be in the past";
     }
 
     if (Object.keys(newError).length > 0) {
@@ -66,26 +124,33 @@ function TaskForm() {
       return;
     }
 
-    setError({}); // Clear errors if form is valid
+    setError({});
+    setSubmissionError(null);
+    setIsSubmitting(true);
 
-    // Form is valid
-    const newTask: CreateTaskRequest = {
+    const request: CreateTaskRequest | UpdateTaskRequest = {
       title: trimmedTitle,
       description: trimmedDescription,
       priority: formData.priority,
       dueDate: `${formData.dueDate}T00:00:00.000Z`,
     };
 
-    setIsSubmitting(true);
-    setSubmissionError(null);
-
     try {
-      await createTask(newTask);
-      router.push("/tasks");
-      router.refresh();
+      if (isEditing) {
+        if (!onSave) {
+          throw new Error("Edit handler is missing");
+        }
+
+        await onSave(request);
+      } else {
+        await createTask(request);
+
+        router.push("/tasks");
+        router.refresh();
+      }
     } catch (error) {
       setSubmissionError(
-        `Failed to create task. Please try again. Error: ${getErrorMessage(error)}`,
+        `Failed to ${isEditing ? "update" : "create"} task. Please try again. Error: ${getErrorMessage(error)}`,
       );
     } finally {
       setIsSubmitting(false);
@@ -94,80 +159,155 @@ function TaskForm() {
 
   return (
     <form
-      className="flex flex-col gap-4 w-full max-w-md"
+      id="task-form"
       onSubmit={handleSubmit}
     >
-      <label htmlFor="title" className="font-semibold">
-        Task Title
+      <label htmlFor="task-title">
+        Task title
+        <span>*</span>
       </label>
+
       <input
-        id="title"
-        type="text"
-        placeholder="Task Title"
-        className="border p-2 rounded"
+        id="task-title"
+        autoFocus
+        required
+        minLength={3}
+        maxLength={150}
+        placeholder="What’s the next small step?"
         value={formData.title}
-        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        onChange={(event) =>
+          setFormData({
+            ...formData,
+            title: event.target.value,
+          })
+        }
       />
-      {error.title && <p className="text-red-500 text-sm">{error.title}</p>}
 
-      <label htmlFor="description" className="font-semibold">
-        Task Description
+      {error.title && (
+        <p className="form-error" role="alert">
+          {error.title}
+        </p>
+      )}
+
+      <label htmlFor="task-description">
+        A few details
       </label>
+
       <textarea
-        id="description"
+        id="task-description"
         maxLength={1000}
-        placeholder="Task Description"
-        className="border p-2 rounded"
+        rows={3}
+        placeholder="Add context, links, or a little inspiration…"
         value={formData.description}
-        onChange={(e) =>
-          setFormData({ ...formData, description: e.target.value })
+        onChange={(event) =>
+          setFormData({
+            ...formData,
+            description: event.target.value,
+          })
         }
       />
+
       {error.description && (
-        <p className="text-red-500 text-sm">{error.description}</p>
+        <p className="form-error" role="alert">
+          {error.description}
+        </p>
       )}
 
-      <label htmlFor="priority" className="font-semibold">
-        Task Priority
-      </label>
-      <select
-        id="priority"
-        className="border p-2 rounded"
-        value={formData.priority}
-        onChange={(e) =>
-          setFormData({ ...formData, priority: e.target.value as Priority })
-        }
-      >
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-      {error.priority && (
-        <p className="text-red-500 text-sm">{error.priority}</p>
-      )}
+      <div className="form-row">
+        <div>
+          <label htmlFor="task-priority">
+            Priority
+          </label>
 
-      <label htmlFor="dueDate" className="font-semibold">
-        Due Date
-      </label>
-      <input
-        id="dueDate"
-        type="date"
-        className="border p-2 rounded"
-        value={formData.dueDate}
-        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-      />
-      {error.dueDate && <p className="text-red-500 text-sm">{error.dueDate}</p>}
+          <select
+            id="task-priority"
+            value={formData.priority}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                priority: event.target.value as Priority,
+              })
+            }
+          >
+            {(["high", "medium", "low"] as Priority[]).map(
+              (priority) => (
+                <option
+                  value={priority}
+                  key={priority}
+                >
+                  {priority}
+                </option>
+              ),
+            )}
+          </select>
 
-      <button
-        type="submit"
-        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Creating..." : "Create Task"}
-      </button>
+          {error.priority && (
+            <p className="form-error" role="alert">
+              {error.priority}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="task-due">
+            Due date
+            <span>*</span>
+          </label>
+
+          <input
+            id="task-due"
+            type="date"
+            required
+            min={isEditing ? undefined : getTodayDate()}
+            value={formData.dueDate}
+            onChange={(event) =>
+              setFormData({
+                ...formData,
+                dueDate: event.target.value,
+              })
+            }
+          />
+
+          {error.dueDate && (
+            <p className="form-error" role="alert">
+              {error.dueDate}
+            </p>
+          )}
+        </div>
+      </div>
+
       {submissionError && (
-        <p className="text-red-500 text-sm">{submissionError}</p>
+        <p className="form-error" role="alert">
+          {submissionError}
+        </p>
       )}
+
+      <div className="modal-footer">
+        <button
+          className="button"
+          type="button"
+          onClick={cancel}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="button dark"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          <Icon name={isEditing ? "check" : "plus"} />
+
+          {isSubmitting
+            ? isEditing
+              ? "Saving…"
+              : "Creating…"
+            : isEditing
+              ? "Save changes"
+              : "Create task"}
+        </button>
+      </div>
     </form>
   );
 }

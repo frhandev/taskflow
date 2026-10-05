@@ -13,19 +13,11 @@ export default function DashboardShell({
     router = useRouter();
 
   const [open, setOpen] = useState(false);
-  const page = pathname.startsWith("/tasks")
-    ? "tasks"
-    : pathname.startsWith("/calendar")
-      ? "calendar"
-      : pathname.startsWith("/settings")
-        ? "settings"
-        : "dashboard";
-
+  const page = pathname.startsWith("/tasks") ? "tasks" : "dashboard";
 
   useEffect(() => {
     document.title = `TaskFlow — ${page}`;
   }, [page]);
-
 
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {

@@ -1,32 +1,78 @@
 "use client";
 
-import Task from "@/types/Tasks/task";
-import TaskCard from "./TaskCard";
 import { useState } from "react";
-import EditTaskForm from "./EditTaskForm";
-import { completeTask, deleteTask, updateTask } from "@/lib/api/tasks";
+import Link from "next/link";
+
+import Task from "@/types/Tasks/task";
 import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
+
+import {
+  completeTask,
+  deleteTask,
+  updateTask,
+} from "@/lib/api/tasks";
+
 import { getErrorMessage } from "@/lib/utils/errors";
 
-function TaskList({ tasks }: { tasks: Task[] }) {
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+import TaskCard from "./TaskCard";
+import EditTaskForm from "./EditTaskForm";
 
+import Icon from "../ui/Icon";
+import EmptyState from "../ui/EmptyState";
+import ConfirmDialog from "../ui/ConfirmDialog";
+
+type ViewMode = "list" | "grid";
+
+type SortOption =
+  | "newest"
+  | "oldest"
+  | "due-earliest"
+  | "due-latest"
+  | "priority";
+
+function TaskList({ tasks }: { tasks: Task[] }) {
   const [taskItems, setTaskItems] = useState<Task[]>(tasks);
 
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+  // View
+  const [view, setView] = useState<ViewMode>("list");
 
-  //Status Changing
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "completed"
+  >("all");
+
+  const [priorityFilter, setPriorityFilter] = useState<
+    "all" | "high" | "medium" | "low"
+  >("all");
+
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  // Action states
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(
+    null,
+  );
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+
+  // Editing
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // -----------------------------
+  // Complete Task
+  // -----------------------------
+
   const handleStatusChange = async (taskId: string) => {
     setCompletingTaskId(taskId);
     setActionError(null);
 
     try {
       const completedTask = await completeTask(taskId);
+
       setTaskItems((currentTasks) =>
-        currentTasks.map((task) => (task.id === taskId ? completedTask : task)),
+        currentTasks.map((task) =>
+          task.id === taskId ? completedTask : task,
+        ),
       );
     } catch (error) {
       setActionError(
@@ -37,37 +83,9 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     }
   };
 
-  //Task Filtering
-  const filteredTasks = taskItems.filter((task) => {
-    const matchesSearchTerm =
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatusFilter =
-      statusFilter === "all" || task.status === statusFilter;
-    const matchesPriorityFilter =
-      priorityFilter === "all" || task.priority === priorityFilter;
-
-    return matchesSearchTerm && matchesStatusFilter && matchesPriorityFilter;
-  });
-
-  // Sorting Tasks
-  const [sortBy, setSortBy] = useState<string>("newest");
-
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (sortBy === "newest") {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else if (sortBy === "oldest") {
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    } else if (sortBy === "due-earliest") {
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    } else if (sortBy === "due-latest") {
-      return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
-    }
-    return 0;
-  });
-
-  //Edit task
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  // -----------------------------
+  // Edit Task
+  // -----------------------------
 
   const handleSave = async (request: UpdateTaskRequest) => {
     if (!editingTask) return;
@@ -87,21 +105,19 @@ function TaskList({ tasks }: { tasks: Task[] }) {
     setEditingTask(null);
   };
 
-  //Delete Task
-  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  // -----------------------------
+  // Delete Task
+  // -----------------------------
 
-  const handleDelete = async (taskId: string) => {
+  const requestDelete = (taskId: string) => {
     setDeletingTaskId(taskId);
     setActionError(null);
+  };
 
-    const isConfirmed = window.confirm(
-      "Are you sure you want to delete this task?",
-    );
+  const confirmDelete = async () => {
+    if (!deletingTaskId) return;
 
-    if (!isConfirmed) {
-      setDeletingTaskId(null);
-      return;
-    }
+    const taskId = deletingTaskId;
 
     try {
       await deleteTask(taskId);
@@ -113,65 +129,265 @@ function TaskList({ tasks }: { tasks: Task[] }) {
       if (editingTask?.id === taskId) {
         setEditingTask(null);
       }
+
+      setDeletingTaskId(null);
     } catch (error) {
       setActionError(
         `Failed to delete task. Please try again. Error: ${getErrorMessage(error)}`,
       );
-    } finally {
-      setDeletingTaskId(null);
     }
+  };
+
+  // -----------------------------
+  // Filtering
+  // -----------------------------
+
+  const filteredTasks = taskItems.filter((task) => {
+    const search = searchTerm.toLowerCase().trim();
+
+    const matchesSearch =
+      task.title.toLowerCase().includes(search) ||
+      task.description.toLowerCase().includes(search);
+
+    const matchesStatus =
+      statusFilter === "all" || task.status === statusFilter;
+
+    const matchesPriority =
+      priorityFilter === "all" || task.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
+  // -----------------------------
+  // Sorting
+  // -----------------------------
+
+  const priorityOrder = {
+    high: 3,
+    medium: 2,
+    low: 1,
+  };
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return (
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+        );
+
+      case "oldest":
+        return (
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+        );
+
+      case "due-earliest":
+        return (
+          new Date(a.dueDate).getTime() -
+          new Date(b.dueDate).getTime()
+        );
+
+      case "due-latest":
+        return (
+          new Date(b.dueDate).getTime() -
+          new Date(a.dueDate).getTime()
+        );
+
+      case "priority":
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+
+      default:
+        return 0;
+    }
+  });
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setPriorityFilter("all");
+    setSortBy("newest");
   };
 
   return (
     <>
-      <div className="flex gap-10">
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* Intro */}
+
+      <section className="intro">
         <div>
-          <label htmlFor="statusFilter">Status:</label>
-          <select
-            id="statusFilter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-          </select>
+          <p className="eyebrow">
+            A little structure. A lot of possibility.
+          </p>
+
+          <h1>Your next big thing.</h1>
+
+          <p className="intro-sub">
+            All your ideas, to-dos, and done-and-dusteds. In one place.
+          </p>
         </div>
 
-        <div>
-          <label htmlFor="priorityFilter">Priority:</label>
+        <Link className="button dark" href="/tasks/new">
+          <Icon name="plus" />
+          New task
+        </Link>
+      </section>
+
+      {/* Tasks */}
+
+      <section className="tasks-section">
+        {/* Status filters + view */}
+
+        <div className="tasks-toolbar">
+          <div
+            className="filter-tabs"
+            role="group"
+            aria-label="Filter tasks by status"
+          >
+            {(["all", "pending", "completed"] as const).map((status) => (
+              <button
+                type="button"
+                key={status}
+                className={`filter-tab ${
+                  statusFilter === status ? "active" : ""
+                }`}
+                aria-pressed={statusFilter === status}
+                onClick={() => setStatusFilter(status)}
+              >
+                {status}
+
+                <span>
+                  {status === "all"
+                    ? taskItems.length
+                    : taskItems.filter(
+                        (task) => task.status === status,
+                      ).length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="view-toggle">
+            {(["list", "grid"] as const).map((mode) => (
+              <button
+                type="button"
+                key={mode}
+                className={`icon-button ${
+                  view === mode ? "selected" : ""
+                }`}
+                aria-label={`${mode} view`}
+                aria-pressed={view === mode}
+                onClick={() => setView(mode)}
+              >
+                <Icon name={mode} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Search + filters */}
+
+        <div className="search-toolbar">
+          <div className="search-field">
+            <Icon name="search" />
+
+            <input
+              id="task-search"
+              type="search"
+              value={searchTerm}
+              placeholder="Find a task…"
+              aria-label="Find a task"
+              onChange={(event) =>
+                setSearchTerm(event.target.value)
+              }
+            />
+
+            <kbd>/</kbd>
+          </div>
+
           <select
-            id="priorityFilter"
+            id="priority-filter"
+            aria-label="Filter by priority"
             value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
+            onChange={(event) =>
+              setPriorityFilter(
+                event.target.value as
+                  | "all"
+                  | "high"
+                  | "medium"
+                  | "low",
+              )
+            }
           >
-            <option value="all">All Priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
+            <option value="all">All priorities</option>
             <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+
+          <select
+            id="sort-filter"
+            aria-label="Sort tasks"
+            value={sortBy}
+            onChange={(event) =>
+              setSortBy(event.target.value as SortOption)
+            }
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="due-earliest">Due date: earliest</option>
+            <option value="due-latest">Due date: latest</option>
+            <option value="priority">Priority</option>
           </select>
         </div>
 
-        <div>
-          <label htmlFor="sortBy">Sort By:</label>
-          <select
-            id="sortBy"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="due-latest">Due Date: Latest</option>
-            <option value="due-earliest">Due Date: Earliest</option>
-          </select>
+        {/* Error */}
+
+        {actionError && (
+          <p className="form-error" role="alert">
+            {actionError}
+          </p>
+        )}
+
+        {/* Result count */}
+
+        <div className="results-heading">
+          <span>
+            {sortedTasks.length}{" "}
+            {sortedTasks.length === 1 ? "task" : "tasks"}
+          </span>
+
+          <span className="tiny-label">
+            LET&apos;S GET INTO IT ↗
+          </span>
         </div>
-      </div>
+
+        {/* Results */}
+
+        <div
+          className={`task-results ${
+            view === "grid" ? "task-grid" : "task-list"
+          }`}
+        >
+          {sortedTasks.length > 0 ? (
+            sortedTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                card={view === "grid"}
+                onComplete={handleStatusChange}
+                onEdit={() => setEditingTask(task)}
+                onDelete={requestDelete}
+                completingTaskId={completingTaskId}
+                isDeleting={deletingTaskId === task.id}
+              />
+            ))
+          ) : (
+            <EmptyState onClear={clearFilters} />
+          )}
+        </div>
+      </section>
+
+      {/* Edit */}
 
       {editingTask && (
         <EditTaskForm
@@ -182,37 +398,17 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         />
       )}
 
-      {actionError && (
-        <p className="mt-2 text-sm text-red-500">{actionError}</p>
+      {/* Delete confirmation */}
+
+      {deletingTaskId && (
+        <ConfirmDialog
+          heading="Delete this task?"
+          text="This action cannot be undone."
+          button="Delete task"
+          onConfirm={confirmDelete}
+          onClose={() => setDeletingTaskId(null)}
+        />
       )}
-      <div className="mt-6 w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {filteredTasks.length === 0 && taskItems.length > 0 ? (
-          <div className="col-span-full text-center">
-            <p className="text-gray-500">No tasks match the current filters.</p>
-          </div>
-        ) : (
-          sortedTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onComplete={handleStatusChange}
-              onEdit={() => setEditingTask(task)}
-              completingTaskId={completingTaskId}
-              onDelete={handleDelete}
-              isDeleting={deletingTaskId === task.id}
-            />
-          ))
-        )}
-        {taskItems.length === 0 && (
-          <div className="col-span-full text-center">
-            <p className="text-gray-500">No tasks yet.</p>
-            <p className="text-gray-500">
-              Click on <span className="font-bold">+ New Task</span> to create
-              one.
-            </p>
-          </div>
-        )}
-      </div>
     </>
   );
 }
