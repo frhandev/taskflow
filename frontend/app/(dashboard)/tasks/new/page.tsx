@@ -1,12 +1,13 @@
-import TaskForm from "@/components/tasks/TaskForm";
-
-function NewTaskPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2 gap-3">
-      <h1 className="text-4xl font-bold">New Task Page</h1>
-      <TaskForm />
-    </div>
-  );
+import NewTask from "@/components/tasks/NewTask";
+export default async function NewTaskPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ due?: string }>;
+}) {
+  const { due } = await searchParams;
+  const initialDate =
+    due && /^\d{4}-\d{2}-\d{2}$/.test(due) && Number.isFinite(Date.parse(due))
+      ? due
+      : undefined;
+  return <NewTask initialDate={initialDate} />;
 }
-
-export default NewTaskPage;
