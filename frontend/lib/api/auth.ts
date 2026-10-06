@@ -57,7 +57,7 @@ export async function login(req: LoginRequest): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch(`${API_URL}/api/auth/login`, {
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
 
@@ -70,7 +70,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function getUser(): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/auth/login`, {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
     method: "GET",
     credentials: "include",
     cache: "no-store",
