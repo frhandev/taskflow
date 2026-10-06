@@ -23,7 +23,7 @@ async function getResponseError(response: Response): Promise<string> {
 }
 
 export async function register(req: RegisterRequest): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/register`, {
+  const res = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
 
@@ -40,7 +40,7 @@ export async function register(req: RegisterRequest): Promise<AuthUser> {
 }
 
 export async function login(req: LoginRequest): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/login`, {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
 
@@ -57,7 +57,7 @@ export async function login(req: LoginRequest): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch(`${API_URL}/api/login`, {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
 
@@ -70,7 +70,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function getUser(): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/login`, {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "GET",
     credentials: "include",
     cache: "no-store",
