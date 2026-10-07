@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Data;
@@ -10,22 +12,33 @@ namespace TaskFlow.Api.Controllers;
 using TaskStatus = TaskFlow.Api.Models.Enums.TaskStatus;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public TasksController(ApplicationDbContext context)
+    public TasksController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
 
     //Get All Tasks 
     [HttpGet]
     public async Task<IActionResult> GetTasks()
     {
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
         var tasks = await _context.Tasks
             .AsNoTracking()
+            .Where(task => task.UserId == userId)
             .ToListAsync();
 
         return Ok(tasks.Select(task => task.ToDto()));
@@ -36,9 +49,17 @@ public class TasksController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetTaskById(Guid id)
     {
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+
         var task = await _context.Tasks
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id);  
+            .FirstOrDefaultAsync(task => task.Id == id && task.UserId == userId);
 
         if (task == null)
         {
@@ -52,6 +73,13 @@ public class TasksController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto createTaskDto)
     {
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
         var newTaskItem = new TaskItem
         {
             Id = Guid.NewGuid(),
@@ -61,6 +89,8 @@ public class TasksController : ControllerBase
             DueDate = createTaskDto.DueDate,
             Status = TaskStatus.Pending,
             CreatedAt = DateTime.UtcNow,
+
+            UserId = userId
         };
 
         _context.Tasks.Add(newTaskItem);
@@ -74,7 +104,14 @@ public class TasksController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateTask([FromBody] UpdateTaskDto updateTaskDto, Guid id)
     {
-        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var task = await _context.Tasks.FirstOrDefaultAsync(task => task.Id == id && task.UserId == userId);
 
         if (task == null)
         {
@@ -95,7 +132,15 @@ public class TasksController : ControllerBase
     [HttpPatch("{id:guid}/complete")]
     public async Task<IActionResult> CompleteTask(Guid id)
     {
-        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var task = await _context.Tasks.FirstOrDefaultAsync(task => task.Id == id && task.UserId == userId);
+
 
         if (task == null)
         {
@@ -113,7 +158,14 @@ public class TasksController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteTask(Guid id)
     {
-        var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id);
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized();
+        }
+
+        var task = await _context.Tasks.FirstOrDefaultAsync(task => task.Id == id && task.UserId == userId);
 
         if (task == null)
         {

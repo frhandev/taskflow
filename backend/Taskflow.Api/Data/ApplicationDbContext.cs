@@ -14,4 +14,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<TaskItem> Tasks {get; set;} = null!;
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<TaskItem>()
+            .HasOne(task => task.ApplicationUser)
+            .WithMany(user => user.Tasks)
+            .HasForeignKey(task => task.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+    }
 }

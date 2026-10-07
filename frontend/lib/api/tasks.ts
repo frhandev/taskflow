@@ -11,9 +11,11 @@ function mapTaskDto(task: TaskApiDto): Task {
   };
 }
 
-export async function getTasks(): Promise<Task[]> {
+export async function getTasks(cookieHeader: string): Promise<Task[]> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
     cache: "no-store",
+
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
   });
 
   if (!response.ok) {
@@ -28,9 +30,13 @@ export async function getTasks(): Promise<Task[]> {
 export async function createTask(task: CreateTaskRequest): Promise<Task> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
     method: "POST",
+
     headers: {
       "Content-Type": "application/json",
     },
+
+    credentials: "include",
+
     body: JSON.stringify(task),
   });
 
@@ -44,10 +50,15 @@ export async function createTask(task: CreateTaskRequest): Promise<Task> {
 }
 
 export async function completeTask(taskId: string): Promise<Task> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/complete`, {
-    method: "PATCH",
-  });
-  
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/complete`,
+    {
+      method: "PATCH",
+
+      credentials: "include",
+    },
+  );
+
   if (!response.ok) {
     throw new Error(`Error completing task: ${response.status}`);
   }
@@ -57,14 +68,21 @@ export async function completeTask(taskId: string): Promise<Task> {
   return mapTaskDto(data);
 }
 
-export async function updateTask(taskId: string, updatedTask: UpdateTaskRequest) : Promise<Task> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
+export async function updateTask(
+  taskId: string,
+  updatedTask: UpdateTaskRequest,
+): Promise<Task> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(updatedTask),
     },
-    body: JSON.stringify(updatedTask),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Error updating task: ${response.status}`);
@@ -75,12 +93,16 @@ export async function updateTask(taskId: string, updatedTask: UpdateTaskRequest)
   return mapTaskDto(task);
 }
 
-export async function deleteTask(taskId: string) : Promise<void> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
-    method: "DELETE",
-  });
+export async function deleteTask(taskId: string): Promise<void> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+    },
+  );
 
-  if(!response.ok) {
-    throw new Error(`Error deleting task: ${response.status}`)
+  if (!response.ok) {
+    throw new Error(`Error deleting task: ${response.status}`);
   }
 }

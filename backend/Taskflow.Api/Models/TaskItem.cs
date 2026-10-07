@@ -19,4 +19,7 @@ public class TaskItem
     public DateTime DueDate { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public string UserId {get; set;} = string.Empty;
+    public ApplicationUser ApplicationUser {get; set;} = null!;
 }
