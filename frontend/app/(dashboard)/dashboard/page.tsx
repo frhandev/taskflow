@@ -8,7 +8,7 @@ async function DashboardPage() {
   const authCookie = cookieStore.get("TaskFlow.Auth");
 
   const cookieHeader = authCookie
-    ? `${authCookie.name} = ${authCookie.value}`
+    ? `${authCookie.name}=${authCookie.value}`
     : "";
 
   const tasks = await getTasks(cookieHeader);
