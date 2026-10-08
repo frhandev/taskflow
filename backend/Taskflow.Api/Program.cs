@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
@@ -130,6 +131,31 @@ builder.Services.AddRateLimiter(options =>
         );
     };
 });
+
+// Persist cookie encryption keys across container restarts in Production.
+// The configured directory must be a mounted, persistent Railway Volume.
+var dataProtection = builder.Services.AddDataProtection()
+    .SetApplicationName("TaskFlow.Api");
+
+if (builder.Environment.IsProduction())
+{
+    var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
+
+    if (string.IsNullOrWhiteSpace(keyRingPath))
+    {
+        throw new InvalidOperationException(
+            "DataProtection:KeyRingPath must be set in Production.");
+    }
+
+    var keyDirectory = new DirectoryInfo(keyRingPath);
+    if (!keyDirectory.Exists)
+    {
+        throw new InvalidOperationException(
+            "The Data Protection key directory does not exist. Mount a persistent volume first.");
+    }
+
+    dataProtection.PersistKeysToFileSystem(keyDirectory);
+}
 
 var app = builder.Build();
 
