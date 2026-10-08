@@ -2,6 +2,7 @@ import CreateTaskRequest from "@/types/Tasks/CreateTaskRequest";
 import Task from "@/types/Tasks/task";
 import TaskApiDto from "@/types/Tasks/TaskApiDto";
 import UpdateTaskRequest from "@/types/Tasks/UpdateTaskRequest";
+import { getCsrfToken } from "./csrf";
 
 function mapTaskDto(task: TaskApiDto): Task {
   return {
@@ -12,9 +13,14 @@ function mapTaskDto(task: TaskApiDto): Task {
 }
 
 export async function getTasks(cookieHeader: string): Promise<Task[]> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
-    cache: "no-store",
+  const backendUrl = process.env.BACKEND_INTERNAL_URL;
 
+  if (!backendUrl) {
+    throw new Error("BACKEND_INTERNAL_URL is not configured.");
+  }
+
+  const response = await fetch(`${backendUrl}/api/tasks`, {
+    cache: "no-store",
     headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
   });
 
@@ -28,14 +34,17 @@ export async function getTasks(cookieHeader: string): Promise<Task[]> {
 }
 
 export async function createTask(task: CreateTaskRequest): Promise<Task> {
+  const csrfToken = await getCsrfToken();
+
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
     method: "POST",
 
     headers: {
       "Content-Type": "application/json",
+      "X-CSRF-TOKEN": csrfToken,
     },
 
-    credentials: "include",
+    credentials: "same-origin",
 
     body: JSON.stringify(task),
   });
@@ -50,14 +59,16 @@ export async function createTask(task: CreateTaskRequest): Promise<Task> {
 }
 
 export async function completeTask(taskId: string): Promise<Task> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/complete`,
-    {
-      method: "PATCH",
+  const csrfToken = await getCsrfToken();
 
-      credentials: "include",
+  const response = await fetch(`/api/tasks/${taskId}/complete`, {
+    method: "PATCH",
+    credentials: "same-origin",
+
+    headers: {
+      "X-CSRF-TOKEN": csrfToken,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(`Error completing task: ${response.status}`);
@@ -72,17 +83,19 @@ export async function updateTask(
   taskId: string,
   updatedTask: UpdateTaskRequest,
 ): Promise<Task> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(updatedTask),
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(`/api/tasks/${taskId}`, {
+    method: "PUT",
+    credentials: "same-origin",
+
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-TOKEN": csrfToken,
     },
-  );
+
+    body: JSON.stringify(updatedTask),
+  });
 
   if (!response.ok) {
     throw new Error(`Error updating task: ${response.status}`);
@@ -94,13 +107,16 @@ export async function updateTask(
 }
 
 export async function deleteTask(taskId: string): Promise<void> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`,
-    {
-      method: "DELETE",
-      credentials: "include",
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(`/api/tasks/${taskId}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+
+    headers: {
+      "X-CSRF-TOKEN": csrfToken,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(`Error deleting task: ${response.status}`);

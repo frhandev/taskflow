@@ -1,8 +1,7 @@
 import AuthUser from "@/types/Auth/AuthUser";
 import LoginRequest from "@/types/Auth/LoginRequest";
 import RegisterRequest from "@/types/Auth/RegisterRequest";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { getCsrfToken } from "./csrf";
 
 async function getResponseError(response: Response): Promise<string> {
   try {
@@ -23,11 +22,16 @@ async function getResponseError(response: Response): Promise<string> {
 }
 
 export async function register(req: RegisterRequest): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const csrfToken = await getCsrfToken();
 
-    credentials: "include",
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    credentials: "same-origin",
+
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-TOKEN": csrfToken,
+    },
 
     body: JSON.stringify(req),
   });
@@ -40,11 +44,16 @@ export async function register(req: RegisterRequest): Promise<AuthUser> {
 }
 
 export async function login(req: LoginRequest): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const csrfToken = await getCsrfToken();
 
-    credentials: "include",
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    credentials: "same-origin",
+
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-TOKEN": csrfToken,
+    },
 
     body: JSON.stringify(req),
   });
@@ -57,11 +66,15 @@ export async function login(req: LoginRequest): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch(`${API_URL}/api/auth/logout`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const csrfToken = await getCsrfToken();
 
-    credentials: "include",
+  const res = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "same-origin",
+
+    headers: {
+      "X-CSRF-TOKEN": csrfToken,
+    },
   });
 
   if (!res.ok) {
@@ -70,7 +83,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function getUser(): Promise<AuthUser> {
-  const res = await fetch(`${API_URL}/api/auth/me`, {
+  const res = await fetch(`/api/auth/me`, {
     method: "GET",
     credentials: "include",
     cache: "no-store",

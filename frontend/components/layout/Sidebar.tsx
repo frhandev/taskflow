@@ -50,7 +50,7 @@ function Sidebar({
 
   return (
     <aside className={`sidebar ${open ? "is-open" : ""}`}>
-      <Link className="brand" href="/dashboard" onClick={onClose}>
+      <Link className="brand" href="/" onClick={onClose}>
         <span className="brand-mark">
           <Icon name="logo" />
         </span>

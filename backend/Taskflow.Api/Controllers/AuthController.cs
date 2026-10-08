@@ -1,8 +1,10 @@
 
 
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TaskFlow.Api.DTOs.Auth;
 using TaskFlow.Api.Models;
 
@@ -21,6 +23,8 @@ public class AuthController : ControllerBase
         _signInManager = signInManager;
     }
 
+
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
@@ -74,6 +78,7 @@ public class AuthController : ControllerBase
         );
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
@@ -124,7 +129,7 @@ public class AuthController : ControllerBase
     {
         var user = await _userManager.GetUserAsync(User);
 
-        if(user == null)
+        if (user == null)
         {
             return Unauthorized();
         }
@@ -134,5 +139,15 @@ public class AuthController : ControllerBase
             Id = user.Id,
             Email = user.Email!,
         });
+    }
+
+    [HttpGet("csrf")]
+    public IActionResult GetCsrfToken([FromServices] IAntiforgery antiforgery)
+    {
+        var token = antiforgery.GetAndStoreTokens(HttpContext);
+
+        Response.Headers.CacheControl = "no-store";
+
+        return Ok(new { token = token.RequestToken });
     }
 }

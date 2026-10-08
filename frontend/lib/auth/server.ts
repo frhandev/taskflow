@@ -1,11 +1,11 @@
 import AuthUser from "@/types/Auth/AuthUser";
 import { cookies } from "next/headers";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.BACKEND_INTERNAL_URL;
 
 export async function getServerUser(): Promise<AuthUser | null> {
   if (!API_URL) {
-    throw new Error("NEXT_PUBLIC_API_URL is not configured.");
+    throw new Error("Backend URL is not configured.");
   }
 
   const cookieStore = await cookies();

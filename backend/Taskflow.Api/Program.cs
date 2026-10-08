@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using TaskFlow.Api.Data;
@@ -8,26 +10,43 @@ using TaskFlow.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCors(options =>
+
+if (builder.Environment.IsDevelopment())
 {
-    options.AddPolicy("Frontend", policy =>
+    builder.Services.AddCors(options =>
     {
-        policy
-            .WithOrigins("http://localhost:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        options.AddPolicy("Frontend", policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:3000")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        });
     });
-});
+}
 
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+})
     .AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(
         new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 });
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+
+    options.Cookie.Name = "TaskFlow.Antiforgery";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
@@ -59,21 +78,56 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "TaskFlow.Auth";
     options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.Path = "/";
 
     options.Cookie.SecurePolicy =
         builder.Environment.IsDevelopment()
-        ? CookieSecurePolicy.SameAsRequest
-        : CookieSecurePolicy.Always;
-
-    options.Cookie.SameSite = SameSiteMode.Lax;
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
 
     options.ExpireTimeSpan = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+         partitionKey: $"{context.Request.Path}:{context.Connection.RemoteIpAddress}",
+
+         factory: _ => new FixedWindowRateLimiterOptions
+         {
+             PermitLimit = 10,
+             Window = TimeSpan.FromMinutes(1),
+             QueueLimit = 0,
+             AutoReplenishment = true,
+         }
+        )
+    );
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new
+            {
+                message = "Too many requests. Please try again later."
+            },
+            cancellationToken
+        );
+    };
+});
+
 var app = builder.Build();
 
-app.UseCors("Frontend");
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("Frontend");
+}
+
+app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
