@@ -96,8 +96,19 @@ public class AuthController : ControllerBase
             user,
             req.Password,
             isPersistent: false,
-            lockoutOnFailure: false
+            lockoutOnFailure: true
         );
+
+        if (result.IsLockedOut)
+        {
+            return StatusCode(
+                StatusCodes.Status423Locked,
+                new
+                {
+                    message = "Too many login attempts. Please try again later."
+                }
+            );
+        }
 
         if (!result.Succeeded)
         {
