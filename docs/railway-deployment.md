@@ -40,11 +40,23 @@ Railway services with volumes cannot use multiple replicas, and redeploys of vol
 - Frontend: default Railpack/Next.js build; start with `npm run start`, listening on Railway's assigned public port (verify `PORT`).
 - Watch paths (optional): `/frontend/**` for web, `/backend/Taskflow.Api/**` for API.
 
-## Database migrations — pending release step
+## Database migrations — EF Core bundle on Railway
 
-Do **not** run EF migrations during Docker image build: Railway private networking is not available during build. Use a deliberate, separately executed migration deployment/job that can access the private DB, backed up before any changes. Do not replace or reset the local PostgreSQL database and never check credentials into Git.
+The Dockerfile generates a framework-dependent EF Core migration bundle at `/app/efbundle` in the image. Building the image does **not** touch the database.
 
-Verify `__EFMigrationsHistory`, `Tasks`, `AspNetUsers`, and the other Identity tables before enabling real traffic.
+**Before enabling migrations**, verify the API service has a Railway **private** Postgres connection reference stored as `ConnectionStrings__DefaultConnection` (not your local database). Confirm the database is empty or take a backup before proceeding. The existing `AddTaskOwnership` migration intentionally deletes legacy tasks, so do **not** apply that migration to a populated database without first reviewing and replacing its data handling.
+
+In Railway open **taskflow-api → Settings → Deploy → Pre-Deploy Command**, then enter:
+
+```bash
+/app/efbundle
+```
+
+Save the setting and redeploy **only taskflow-api**. The pre-deploy command runs once per deployment **in a separate container**, on Railway's private network with the service environment variables, before the new app container starts. Volumes are **not mounted** in this phase. The design-time `ApplicationDbContextFactory` allows the migration bundle to connect to PostgreSQL without starting the API or requiring its `/app/keys` Data Protection volume. A failing bundle exits nonzero and stops that deployment. Running the same bundle on an already-migrated database is expected to be a no-op.
+
+In the deployment log, confirm each migration applied, and verify the Postgres Database tab shows `__EFMigrationsHistory`, `Tasks`, `AspNetUsers` and other Identity tables.
+
+Keep `/app/efbundle` as the pre-deploy command for subsequent controlled releases; review new migrations for destructive schema/data changes **before** deployment. For mature production operation, use a separately permissioned one-shot migration job with a database role that can change schema, distinct from the app role.
 
 ## Do not mark production complete until
 
