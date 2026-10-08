@@ -10,6 +10,12 @@ namespace Taskflow.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                """
+        DELETE FROM "Tasks";
+        """
+            );
+
             migrationBuilder.AddColumn<string>(
                 name: "UserId",
                 table: "Tasks",

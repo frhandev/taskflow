@@ -1,10 +1,19 @@
 import DashboardShell from "@/components/layout/DashboardShell";
-export default function DashboardLayout({
+import { getServerUser } from "@/lib/auth/server";
+import { redirect } from "next/navigation";
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  const user = await getServerUser();
+  
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
-      <DashboardShell>{children}</DashboardShell>
+      <DashboardShell user={user}>{children}</DashboardShell>
   );
 }

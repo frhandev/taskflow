@@ -1,5 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Icon, { IconName } from "../ui/Icon";
+import AuthUser from "@/types/Auth/AuthUser";
+import { useState } from "react";
+import { logout } from "@/lib/api/auth";
+import { getErrorMessage } from "@/lib/utils/errors";
+import { useRouter } from "next/navigation";
 
 const links: { page: string; href: string; icon: IconName }[] = [
   { page: "dashboard", href: "/dashboard", icon: "dashboard" },
@@ -10,15 +17,39 @@ function Sidebar({
   pathname,
   open,
   onClose,
+  user,
 }: {
   pathname: string;
   open: boolean;
   onClose: () => void;
+  user: AuthUser;
 }) {
+  const router = useRouter();
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    setLogoutError(null);
+
+    try {
+      await logout();
+
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      setLogoutError(getErrorMessage(error));
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
-    <aside
-      className={`sidebar ${open ? "is-open" : ""}`}
-    >
+    <aside className={`sidebar ${open ? "is-open" : ""}`}>
       <Link className="brand" href="/dashboard" onClick={onClose}>
         <span className="brand-mark">
           <Icon name="logo" />
@@ -27,14 +58,14 @@ function Sidebar({
           taskflow<span className="brand-dot">.</span>
         </span>
       </Link>
-      {/* <div className="workspace-label">
-        <span className="tiny-label">{t("workspace")}</span>
+      <div className="workspace-label">
+        <span className="tiny-label">{user.email}</span>
         <div className="workspace-choice">
           <Icon name="folder" />
-          <span>{profile.workspace}</span>
+          <span>{user.email}</span>
           <span className="workspace-dot" />
         </div>
-      </div> */}
+      </div>
       <nav>
         {links.map(({ page, href, icon }) => {
           const active = pathname.startsWith(href);
@@ -47,7 +78,7 @@ function Sidebar({
               aria-current={active ? "page" : undefined}
             >
               <Icon name={icon} />
-              <span>{(page)}</span>
+              <span>{page}</span>
               {page === "dashboard" && (
                 <Icon name="arrow" className="nav-arrow" />
               )}
@@ -64,16 +95,28 @@ function Sidebar({
           <p>One thing at a time is a pretty good plan.</p>
           <div className="note-line" />
         </div>
-        {/* <Link className="profile" href="/settings" onClick={onClose}>
-          <span className="avatar">
-            Alex
-          </span>
-          <span>
-            <strong>Alex</strong>
-            <small>Local Mode</small>
-          </span>
-          <Icon name="settings" />
-        </Link> */}
+        <div className="sidebar-user mb-10 ">
+          <span className="tiny-label">Signed in as</span>
+
+          <strong className="sidebar-user-email" title={user.email}>
+            {user.email}
+          </strong>
+
+          {logoutError && (
+            <p className="form-error" role="alert">
+              {logoutError}
+            </p>
+          )}
+
+          <button
+            type="button"
+            className="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? "Logging out…" : "Logout"}
+          </button>
+        </div>
       </div>
     </aside>
   );

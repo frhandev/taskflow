@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Icon from "@/components/ui/Icon";
+import AuthUser from "@/types/Auth/AuthUser";
 export default function DashboardShell({
   children,
+  user,
 }: {
   children: React.ReactNode;
+  user: AuthUser;
 }) {
   const pathname = usePathname(),
     router = useRouter();
@@ -49,7 +52,12 @@ export default function DashboardShell({
   }, [router, pathname]);
   return (
     <div className="workspace-shell">
-      <Sidebar pathname={pathname} open={open} onClose={() => setOpen(false)} />
+      <Sidebar
+        pathname={pathname}
+        open={open}
+        onClose={() => setOpen(false)}
+        user={user}
+      />
       {open && (
         <button
           className="sidebar-scrim"
