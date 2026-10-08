@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using TaskFlow.Api.Data;
 using TaskFlow.Api.Models;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -157,7 +159,43 @@ if (builder.Environment.IsProduction())
     dataProtection.PersistKeysToFileSystem(keyDirectory);
 }
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedProto;
+
+    options.ForwardLimit = 1;
+
+    // Trust only the configured reverse-proxy networks.
+    options.KnownIPNetworks.Clear();
+
+    var trustedNetworks =
+        builder.Configuration
+            .GetSection("ReverseProxy:TrustedNetworks")
+            .Get<string[]>() ?? [];
+
+    foreach (var network in trustedNetworks)
+    {
+        options.KnownIPNetworks.Add(
+            System.Net.IPNetwork.Parse(network)
+        );
+    }
+});
+
 var app = builder.Build();
+
+app.Use(async (context, next) =>
+{
+    app.Logger.LogInformation(
+        "Proxy diagnostic: RemoteIP={RemoteIP}, Proto={Proto}",
+        context.Connection.RemoteIpAddress,
+        context.Request.Headers["X-Forwarded-Proto"].ToString()
+    );
+
+    await next();
+});
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
