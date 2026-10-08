@@ -27,15 +27,21 @@ if (builder.Environment.IsDevelopment())
 }
 
 
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-})
+builder.Services
+    .AddControllersWithViews(options =>
+    {
+        options.Filters.Add(
+            new AutoValidateAntiforgeryTokenAttribute()
+        );
+    })
     .AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.Converters.Add(
-        new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-});
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter(
+                JsonNamingPolicy.CamelCase
+            )
+        );
+    });
 
 builder.Services.AddAntiforgery(options =>
 {
@@ -69,6 +75,10 @@ builder.Services
 
         options.Password.RequireUppercase = false;
         options.Password.RequireNonAlphanumeric = false;
+
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
@@ -108,6 +118,9 @@ builder.Services.AddRateLimiter(options =>
 
     options.OnRejected = async (context, cancellationToken) =>
     {
+        context.HttpContext.Response.StatusCode =
+            StatusCodes.Status429TooManyRequests;
+
         await context.HttpContext.Response.WriteAsJsonAsync(
             new
             {

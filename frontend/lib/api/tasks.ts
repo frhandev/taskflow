@@ -36,7 +36,7 @@ export async function getTasks(cookieHeader: string): Promise<Task[]> {
 export async function createTask(task: CreateTaskRequest): Promise<Task> {
   const csrfToken = await getCsrfToken();
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
+  const response = await fetch("/api/tasks", {
     method: "POST",
 
     headers: {
